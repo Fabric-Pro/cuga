@@ -5,14 +5,14 @@ class TestExtractAndCombineCodeblocks:
     """Test suite for extract_and_combine_codeblocks function."""
 
     def test_plain_identifier(self):
-        """Plain identifier should compile and return as-is."""
+        """Plain identifier should be considered data output."""
         result = extract_and_combine_codeblocks('sami')
-        assert result == 'sami'
+        assert result == ''
 
     def test_plain_number(self):
-        """Plain number should compile and return as-is."""
+        """Plain number should be considered data output."""
         result = extract_and_combine_codeblocks('123')
-        assert result == '123'
+        assert result == ''
 
     def test_invalid_syntax(self):
         """Invalid syntax should return empty string."""
@@ -26,8 +26,8 @@ class TestExtractAndCombineCodeblocks:
 
     def test_assignment(self):
         """Assignment statement should compile and return."""
-        result = extract_and_combine_codeblocks('x = 5')
-        assert result == 'x = 5'
+        result = extract_and_combine_codeblocks('x = 5\nprint(x)')
+        assert result == 'x = 5\nprint(x)'
 
     def test_multiple_statements(self):
         """Multiple statements should compile and return."""
@@ -36,8 +36,8 @@ class TestExtractAndCombineCodeblocks:
 
     def test_function_definition(self):
         """Function definition should compile and return."""
-        result = extract_and_combine_codeblocks('def foo():\n    pass')
-        assert result == 'def foo():\n    pass'
+        result = extract_and_combine_codeblocks('def foo():\n    pass\nprint("function defined")')
+        assert result == 'def foo():\n    pass\nprint("function defined")'
 
     def test_simple_markdown_block(self):
         """Simple markdown code block should extract code."""
@@ -46,13 +46,13 @@ class TestExtractAndCombineCodeblocks:
 
     def test_text_before_markdown(self):
         """Text before markdown should extract only code."""
-        result = extract_and_combine_codeblocks('Here is some code:\n```python\nx = 5\n```')
-        assert result == 'x = 5'
+        result = extract_and_combine_codeblocks('Here is some code:\n```python\nx = 5\nprint(x)\n```')
+        assert result == 'x = 5\nprint(x)'
 
     def test_text_before_markdown_with_newline(self):
         """Text before markdown should extract only code."""
-        result = extract_and_combine_codeblocks('Here is some code:\n\n```python\n\n\nx = 5\n\n```')
-        assert result == 'x = 5'
+        result = extract_and_combine_codeblocks('Here is some code:\n\n```python\n\n\nx = 5\nprint(x)\n\n```')
+        assert result == 'x = 5\nprint(x)'
 
     def test_text_and_markdown(self):
         """Text with markdown should extract only code."""
@@ -61,8 +61,8 @@ class TestExtractAndCombineCodeblocks:
 
     def test_markdown_with_text_after(self):
         """Markdown with text after should extract only code."""
-        result = extract_and_combine_codeblocks('```python\nx = 10\n```\nThat was the code')
-        assert result == 'x = 10'
+        result = extract_and_combine_codeblocks('```python\nx = 10\nprint(x)\n```\nThat was the code')
+        assert result == 'x = 10\nprint(x)'
 
     def test_markdown_with_text(self):
         """Markdown with text should extract only code."""
@@ -71,8 +71,10 @@ class TestExtractAndCombineCodeblocks:
 
     def test_text_markdown_text(self):
         """Text before and after markdown should extract only code."""
-        result = extract_and_combine_codeblocks('Here is code:\n```python\ny = 20\n```\nThat was it')
-        assert result == 'y = 20'
+        result = extract_and_combine_codeblocks(
+            'Here is code:\n```python\ny = 20\nprint(y)\n```\nThat was it'
+        )
+        assert result == 'y = 20\nprint(y)'
 
     def test_full_example_with_loop(self):
         """Full example with loop in markdown should extract code."""
@@ -83,22 +85,24 @@ class TestExtractAndCombineCodeblocks:
 
     def test_two_markdown_blocks(self):
         """Two markdown blocks should combine with double newline."""
-        result = extract_and_combine_codeblocks('```python\nx = 1\n```\n```python\ny = 2\n```')
-        assert result == 'x = 1\n\ny = 2'
+        result = extract_and_combine_codeblocks(
+            '```python\nx = 1\nprint(x)\n```\n```python\ny = 2\nprint(y)\n```'
+        )
+        assert result == 'x = 1\nprint(x)\n\ny = 2\nprint(y)'
 
     def test_two_blocks_with_text(self):
         """Two blocks with text between should combine code only."""
         result = extract_and_combine_codeblocks(
-            'Code 1:\n```python\na = 5\n```\nCode 2:\n```python\nb = 10\n```'
+            'Code 1:\n```python\na = 5\nprint(a)\n```\nCode 2:\n```python\nb = 10\nprint(b)\n```'
         )
-        assert result == 'a = 5\n\nb = 10'
+        assert result == 'a = 5\nprint(a)\n\nb = 10\nprint(b)'
 
     def test_function_in_markdown(self):
         """Complex multi-line function in markdown should extract properly."""
         result = extract_and_combine_codeblocks(
-            '```python\ndef calculate(x, y):\n    result = x + y\n    return result\n```'
+            '```python\ndef calculate(x, y):\n    result = x + y\n    return result\nprint(calculate(2, 3))\n```'
         )
-        assert result == 'def calculate(x, y):\n    result = x + y\n    return result'
+        assert result == 'def calculate(x, y):\n    result = x + y\n    return result\nprint(calculate(2, 3))'
 
     def test_empty_string(self):
         """Empty string should return empty."""
@@ -125,14 +129,15 @@ class TestExtractAndCombineCodeblocks:
         code = '''def outer():
     def inner():
         return 42
-    return inner()'''
+    return inner()
+print(outer())'''
         result = extract_and_combine_codeblocks(code)
         assert result == code
 
     def test_code_with_strings_containing_backticks(self):
         """Code with strings containing backticks should work."""
-        result = extract_and_combine_codeblocks('x = "some `text` here"')
-        assert result == 'x = "some `text` here"'
+        result = extract_and_combine_codeblocks('x = "some `text` here"\nprint(x)')
+        assert result == 'x = "some `text` here"\nprint(x)'
 
     def test_markdown_with_empty_code_block(self):
         """Markdown with empty code block should return empty string."""
@@ -143,19 +148,23 @@ class TestExtractAndCombineCodeblocks:
         """Class definition should compile and return."""
         code = '''class MyClass:
     def __init__(self):
-        self.value = 10'''
+        self.value = 10
+obj = MyClass()
+print(obj.value)'''
         result = extract_and_combine_codeblocks(code)
         assert result == code
 
     def test_import_statements(self):
         """Import statements should compile and return."""
-        result = extract_and_combine_codeblocks('import os\nfrom sys import path')
-        assert result == 'import os\nfrom sys import path'
+        result = extract_and_combine_codeblocks('import os\nfrom sys import path\nprint("imports done")')
+        assert result == 'import os\nfrom sys import path\nprint("imports done")'
 
     def test_markdown_with_class_definition(self):
         """Class definition in markdown should extract properly."""
-        result = extract_and_combine_codeblocks('```python\nclass Test:\n    pass\n```')
-        assert result == 'class Test:\n    pass'
+        result = extract_and_combine_codeblocks(
+            '```python\nclass Test:\n    pass\nobj = Test()\nprint("class created")\n```'
+        )
+        assert result == 'class Test:\n    pass\nobj = Test()\nprint("class created")'
 
     def test_multiple_functions_in_markdown(self):
         """Multiple functions in one markdown block should extract all."""
@@ -163,7 +172,8 @@ class TestExtractAndCombineCodeblocks:
     return 1
 
 def func2():
-    return 2'''
+    return 2
+print(func1(), func2())'''
         result = extract_and_combine_codeblocks(f'```python\n{code}\n```')
         assert result == code
 
@@ -188,3 +198,109 @@ def func2():
             result
             == 'accounts_data = await get_accounts_accounts()\nprint(accounts_data)\nawait get_accounts_accounts()'
         )
+
+    def test_string_array_should_not_be_code(self):
+        """Array of strings should not be considered code."""
+        string_array = "['item1', 'item2', 'item3']"
+        result = extract_and_combine_codeblocks(string_array)
+        assert result == ''
+
+    def test_email_array_should_not_be_code(self):
+        """Array of email addresses (strings) should not be considered code."""
+        email_array = "['sarah.bell@gammadeltainc.partners.org', 'sharon.jimenez@upsiloncorp.innovation.org']"
+        result = extract_and_combine_codeblocks(email_array)
+        assert result == ''
+
+    def test_number_array_should_not_be_code(self):
+        """Array of numbers should not be considered code."""
+        number_array = "[1, 2, 3, 4, 5]"
+        result = extract_and_combine_codeblocks(number_array)
+        assert result == ''
+
+    def test_mixed_constant_array_should_not_be_code(self):
+        """Array with mixed constants should not be considered code."""
+        mixed_array = "['string', 42, True, False]"
+        result = extract_and_combine_codeblocks(mixed_array)
+        assert result == ''
+
+    def test_single_boolean_true_should_not_be_code(self):
+        """Single boolean True should not be considered code."""
+        result = extract_and_combine_codeblocks('True')
+        assert result == ''
+
+    def test_single_boolean_false_should_not_be_code(self):
+        """Single boolean False should not be considered code."""
+        result = extract_and_combine_codeblocks('False')
+        assert result == ''
+
+    def test_single_string_constant_should_not_be_code(self):
+        """Single string constant should not be considered code."""
+        result = extract_and_combine_codeblocks("'hello world'")
+        assert result == ''
+
+    def test_single_word_without_spaces_should_not_be_code(self):
+        """Single word without spaces should not be considered code."""
+        result = extract_and_combine_codeblocks('hello')
+        assert result == ''
+
+    def test_decimal_number_should_not_be_code(self):
+        """Decimal number should not be considered code."""
+        result = extract_and_combine_codeblocks('123.45')
+        assert result == ''
+
+    def test_multiline_json_array_with_script_true(self):
+        """Multiline JSON array output with 'Has script: True' should not be considered code."""
+        json_output = '''Has script: True, script value: [
+    "sarah.bell@gammadeltainc.partners.org",
+    "sharon.jimenez@upsiloncorp.innovation.org",
+    "ruth.ross@sigmasystems.operations.com",
+    "dorothy.richardson@nextgencorp.gmail.com",
+    "james.richardson@technovate.com",
+    "michael.torres@pinnacle-solutions.net",
+    "emma.larsson@nexus-digital.co"
+]'''
+        result = extract_and_combine_codeblocks(json_output)
+        assert result == ''
+
+    def test_multiline_json_array_should_not_be_code(self):
+        """Multiline JSON array should not be considered code."""
+        json_array = '''[
+    "item1@example.com",
+    "item2@example.com",
+    "item3@example.com"
+]'''
+        result = extract_and_combine_codeblocks(json_array)
+        assert result == ''
+
+    def test_multiline_emails(self):
+        """Multiline JSON array should not be considered code."""
+        json_array = '''
+item1@example.com
+item2@example.com
+item3@example.com
+'''
+        result = extract_and_combine_codeblocks(json_array)
+        assert result == ''
+
+    def test_multiline_json_object_should_not_be_code(self):
+        """Multiline JSON object should not be considered code."""
+        json_obj = '''{
+    "name": "John Doe",
+    "email": "john@example.com",
+    "age": 30
+}'''
+        result = extract_and_combine_codeblocks(json_obj)
+        assert result == ''
+
+    def test_print_with_mismatched_brackets(self):
+        """Code with mismatched brackets/parentheses should return empty string."""
+        malformed_code = """print(variable_contacts)
+print('sarah.bell@gammadeltainc.partners.org')
+print('sharon.jimenez@upsiloncorp.innovation.org')
+print('ruth.ross@sigmasystems.operations.com')
+print('dorothy.richardson@nextgencorp.gmail.com')
+print('james.richardson@technovate.com')
+print('michael.torres@pinnacle-solutions.net')
+print('emma.larsson@nexus-digital.co'])"""
+        result = extract_and_combine_codeblocks(malformed_code)
+        assert result == ''

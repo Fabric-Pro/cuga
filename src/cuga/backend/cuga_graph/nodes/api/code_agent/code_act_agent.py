@@ -10,6 +10,7 @@ from langchain_core.tools import StructuredTool
 from langchain_core.tools import tool as create_tool
 from langgraph.graph import END, START, MessagesState, StateGraph
 from langgraph.types import Command
+from loguru import logger
 import re
 
 EvalFunction = Callable[[str, dict[str, Any]], tuple[str, dict[str, Any]]]
@@ -51,29 +52,39 @@ def extract_and_combine_codeblocks(text: str) -> str:
 
         print('world')
     """
-    # First check if the full text is already valid Python code
-
     # Find all code blocks in the text using regex
     # Pattern matches anything between triple backticks, with or without a language identifier
     code_blocks = re.findall(BACKTICK_PATTERN, text, re.DOTALL)
 
-    if not code_blocks:
-        try:
-            compile(text.strip().replace('await ', ''), '<string>', 'exec')
-            return text.strip()
-        except SyntaxError:
+    if code_blocks:
+        # Process each codeblock
+        processed_blocks = []
+        for block in code_blocks:
+            # Strip leading and trailing whitespace
+            block = block.strip()
+            processed_blocks.append(block)
+
+        # Combine all codeblocks with newlines between them
+        combined_code = "\n\n".join(processed_blocks)
+
+        # Check if the combined code has print
+        if "print(" not in combined_code:
             return ""
 
-    # Process each codeblock
-    processed_blocks = []
-    for block in code_blocks:
-        # Strip leading and trailing whitespace
-        block = block.strip()
-        processed_blocks.append(block)
+        return combined_code
 
-    # Combine all codeblocks with newlines between them
-    combined_code = "\n\n".join(processed_blocks)
-    return combined_code
+    # No markdown blocks found, check if the text itself is valid Python code
+    stripped_text = text.strip()
+
+    # Check if it has print
+    if "print(" not in stripped_text:
+        return ""
+
+    try:
+        compile(stripped_text.replace('await ', ''), '<string>', 'exec')
+        return stripped_text
+    except SyntaxError:
+        return ""
 
 
 EvalFunction = Callable[[str, dict[str, Any]], tuple[str, dict[str, Any]]]
@@ -178,11 +189,32 @@ def create_codeact(
             existing_context = state.get("context", {})
             context = {**existing_context, **tools_context}
             # Execute the script in the sandbox
+
             output, new_vars = await eval_fn(state["script"], context)
+
+            # 📝 Code Execution Result
+            logger.debug(
+                f"\n\n------\n\n📝 Execution output:\n\n {output.strip()[:2000]}{'...' if len(output.strip()) > 2000 else ''} \n\n------\n\n"
+            )
+
+            # ──────────────────────────────────────────────────────────────
+            # 🔄 Context Update: Merging execution results with existing context
+            # ──────────────────────────────────────────────────────────────
+
             new_context = {**existing_context, **new_vars}
+
+            # ──────────────────────────────────────────────────────────────
+            # 📤 Return: Formatting execution results for model consumption
+            # ──────────────────────────────────────────────────────────────
+
             # Return execution output as a user message so the model sees it
             return {
-                "messages": [{"role": "user", "content": f"Execution output:\n{output}"}],
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": f"Execution output preview:\n{output.strip()[:1000]}{'...' if len(output.strip()) > 1000 else ''} Execution output:\n{output}",
+                    }
+                ],
                 "context": new_context,
             }
     else:

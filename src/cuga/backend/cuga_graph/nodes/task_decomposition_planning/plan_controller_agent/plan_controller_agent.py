@@ -41,10 +41,13 @@ class PlanControllerAgent(BaseAgent):
 
     @staticmethod
     def output_parser(result: PlanControllerOutput, name) -> Any:
+        logger.debug(
+            f"\n\n------\n\nPlanControllerOutput: {json.dumps(result.model_dump(), indent=4)} \n\n------\n\n"
+        )
         result = AIMessage(content=json.dumps(result.model_dump()), name=name)
         return result
 
-    async def run(self, input_variables: AgentState) -> PlanControllerOutput:
+    async def run(self, input_variables: AgentState) -> AIMessage:
         task_input = {
             "task_decomposition": input_variables.task_decomposition.format_as_list(),
             "stm_all_history": input_variables.stm_all_history,
@@ -54,15 +57,14 @@ class PlanControllerAgent(BaseAgent):
             data["img"] = tracker.images[-1]
         data["task_decomposition"] = task_input["task_decomposition"]
         data["stm_all_history"] = task_input["stm_all_history"]
-        data["sub_tasks_progress"] = input_variables.sub_tasks_progress or []
+        # data["sub_tasks_progress"] = input_variables.sub_tasks_progress or []
         data["variables_history"] = var_manager.get_variables_summary(last_n=6)
         data["instructions"] = instructions_manager.get_instructions(self.name)
         # Add API applications list
         data["api_applications_list"] = [
             app.name for app in input_variables.api_intent_relevant_apps or [] if app.type == 'api'
         ]
-        result: PlanControllerOutput = await self.chain.ainvoke(data)
-        logger.debug(f"PlanControllerOutput: {result.model_dump_json()}")
+        result = await self.chain.ainvoke(data)
         return result
 
     @staticmethod

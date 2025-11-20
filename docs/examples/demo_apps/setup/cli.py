@@ -13,6 +13,7 @@ import atexit
 from pathlib import Path
 from typing import Optional, List, Tuple
 import questionary
+import argparse
 
 
 # ANSI color codes for beautiful output
@@ -196,9 +197,11 @@ def kill_process(pid: int) -> bool:
             return False
 
 
-def check_and_handle_ports() -> bool:
+def check_and_handle_ports(include_email: bool = False) -> bool:
     """Check if required ports are available and offer to kill processes if needed"""
     required_ports = {8007: "CUGA Agent", 8111: "CRM MCP Server", 8112: "File System MCP Server"}
+    if include_email:
+        required_ports.update({8000: "Email MCP Server", 1025: "Email SMTP Sink"})
 
     ports_in_use = {}
     for port, service in required_ports.items():
@@ -359,6 +362,7 @@ def start_filesystem_server(workspace: Path) -> subprocess.Popen:
     workspace_str = str(workspace)
     cmd = [
         'uvx',
+        '--refresh',
         '--from',
         'git+https://github.com/cuga-project/cuga-agent.git#subdirectory=docs/examples/demo_apps/file_system',
         'filesystem-server',
@@ -394,6 +398,7 @@ def start_crm_server() -> subprocess.Popen:
 
     cmd = [
         'uvx',
+        '--refresh',
         '--from',
         'git+https://github.com/cuga-project/cuga-agent.git#subdirectory=docs/examples/demo_apps/crm',
         'crm',
@@ -421,12 +426,92 @@ def start_crm_server() -> subprocess.Popen:
         sys.exit(1)
 
 
-def print_configuration_info(workspace: Path):
+def start_email_sink() -> subprocess.Popen:
+    """Start the Email SMTP Sink"""
+    print_info("Starting Email SMTP Sink")
+
+    cmd = [
+        'uvx',
+        '--refresh',
+        '--from',
+        'git+https://github.com/cuga-project/cuga-agent.git#subdirectory=docs/examples/demo_apps/email_mcp/mail_sink',
+        'email_sink',
+    ]
+
+    try:
+        print_info(f"Command: {' '.join(cmd)}")
+        print_info(f"Current working directory: {os.getcwd()}")
+
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1)
+
+        # Give it a moment to start
+        time.sleep(2)
+
+        if proc.poll() is None:
+            running_processes.append(proc)
+            print_success("Email SMTP sink started successfully")
+            print_info(f"Available at: {Colors.BOLD}localhost:1025{Colors.ENDC}")
+            return proc
+        else:
+            stderr = proc.stderr.read() if proc.stderr else "No error output"
+            print_error(f"Email SMTP sink failed to start: {stderr}")
+            sys.exit(1)
+    except Exception as e:
+        print_error(f"Failed to start Email SMTP sink: {e}")
+        sys.exit(1)
+
+
+def start_email_server() -> subprocess.Popen:
+    """Start the Email MCP server"""
+    print_info("Starting Email MCP Server")
+
+    cmd = [
+        'uvx',
+        '--refresh',
+        '--from',
+        'git+https://github.com/cuga-project/cuga-agent.git#subdirectory=docs/examples/demo_apps/email_mcp/mcp_server',
+        'email_mcp',
+    ]
+
+    try:
+        print_info(f"Command: {' '.join(cmd)}")
+        print_info(f"Current working directory: {os.getcwd()}")
+
+        proc = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            bufsize=1,
+            cwd=os.path.dirname(os.path.abspath(__file__)),
+        )
+
+        # Give it a moment to start
+        time.sleep(2)
+
+        if proc.poll() is None:
+            running_processes.append(proc)
+            print_success("Email MCP server started successfully")
+            print_info(f"Available at: {Colors.BOLD}http://localhost:8000/sse{Colors.ENDC}")
+            return proc
+        else:
+            stderr = proc.stderr.read() if proc.stderr else "No error output"
+            print_error(f"Email MCP server failed to start: {stderr}")
+            sys.exit(1)
+    except Exception as e:
+        print_error(f"Failed to start Email MCP server: {e}")
+        sys.exit(1)
+
+
+def print_configuration_info(workspace: Path, include_email: bool = False):
     """Print configuration information for LangFlow"""
     print_step(6, 6, "Configuration Complete!")
 
     policy = f"""## Plan
 For the filesystem application: write or read files only from `{workspace}`"""
+    if include_email:
+        policy += """
+For the email application: send emails only using the local SMTP sink"""
 
     summary = f"""
 {Colors.BOLD}{Colors.OKGREEN}
@@ -442,7 +527,14 @@ For the filesystem application: write or read files only from `{workspace}`"""
 
 {Colors.BOLD}🌐 Running Services:{Colors.ENDC}
    {Colors.OKGREEN}✓{Colors.ENDC} File System MCP: {Colors.BOLD}http://localhost:8112/sse{Colors.ENDC}
-   {Colors.OKGREEN}✓{Colors.ENDC} CRM MCP:         {Colors.BOLD}http://localhost:8111/sse{Colors.ENDC}
+   {Colors.OKGREEN}✓{Colors.ENDC} CRM MCP:         {Colors.BOLD}http://localhost:8111/sse{Colors.ENDC}"""
+
+    if include_email:
+        summary += f"""
+   {Colors.OKGREEN}✓{Colors.ENDC} Email MCP:        {Colors.BOLD}http://localhost:8000/sse{Colors.ENDC}
+   {Colors.OKGREEN}✓{Colors.ENDC} Email SMTP Sink:  {Colors.BOLD}localhost:1025{Colors.ENDC}"""
+
+    summary += f"""
 
 {Colors.BOLD}📋 Files Created:{Colors.ENDC}
    {Colors.OKGREEN}✓{Colors.ENDC} {workspace}/contacts.txt (7 sample contacts)
@@ -450,18 +542,24 @@ For the filesystem application: write or read files only from `{workspace}`"""
 {Colors.BOLD}🔧 LangFlow Configuration:{Colors.ENDC}
 
    {Colors.UNDERLINE}In your CUGA component 'policies' field, add:{Colors.ENDC}
-   
+
    {Colors.OKCYAN}{policy}{Colors.ENDC}
 
    {Colors.UNDERLINE}Connect these MCP servers:{Colors.ENDC}
    • File System: http://localhost:8112/sse
-   • CRM:         http://localhost:8111/sse
+   • CRM:         http://localhost:8111/sse"""
+
+    if include_email:
+        summary += """
+   • Email:       http://localhost:8000/sse"""
+
+    summary += f"""
    • Gmail:       Built-in LangFlow component
 
 {Colors.BOLD}🎯 Demo Task:{Colors.ENDC}
-   {Colors.OKBLUE}Given list of email in the file contacts.txt, Filter those who 
-   exists in the crm application, and retrieve their name, and 
-   associated account name, then send an email to example@gmail.com 
+   {Colors.OKBLUE}Given list of email in the file contacts.txt, Filter those who
+   exists in the crm application, and retrieve their name, and
+   associated account name, then send an email to example@gmail.com
    with the result{Colors.ENDC}
 
 {Colors.BOLD}⚡ Quick Actions:{Colors.ENDC}
@@ -500,17 +598,26 @@ def main():
     """Main entry point"""
     print_header()
 
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description='CUGA Demo Setup CLI')
+    parser.add_argument('--email', action='store_true', help='Include email MCP server and SMTP sink')
+    parser.add_argument(
+        'workspace_path', nargs='?', default=None, help='Path to workspace directory (optional)'
+    )
+
+    args = parser.parse_args()
+
     # Check prerequisites
     if not check_prerequisites():
         print_error("\n❌ Prerequisites check failed. Please install missing requirements.")
         sys.exit(1)
 
     # Check port availability
-    if not check_and_handle_ports():
+    if not check_and_handle_ports(include_email=args.email):
         sys.exit(1)
 
-    # Get workspace path from command line or use default
-    workspace_path = sys.argv[1] if len(sys.argv) > 1 else None
+    # Get workspace path from arguments
+    workspace_path = args.workspace_path
 
     # Create workspace
     workspace = create_workspace(workspace_path)
@@ -522,8 +629,13 @@ def main():
     start_filesystem_server(workspace)
     start_crm_server()
 
+    # Start email servers if requested
+    if args.email:
+        start_email_sink()
+        start_email_server()
+
     # Print configuration
-    print_configuration_info(workspace)
+    print_configuration_info(workspace, include_email=args.email)
 
     # Monitor servers
     monitor_servers()

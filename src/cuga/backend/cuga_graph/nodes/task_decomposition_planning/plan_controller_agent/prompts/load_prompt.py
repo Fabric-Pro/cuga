@@ -32,6 +32,13 @@ class PlanControllerOutput(BaseModel):
                 "When next_subtask_type is 'api', next_subtask_app must be specified (non-empty string). "
                 f"Got next_subtask_type='api' with next_subtask_app='{self.next_subtask_app}'"
             )
+
+        if self.next_subtask_type == 'api' and not self.next_subtask and not self.conclude_task:
+            raise ValueError(
+                "When next_subtask_type is 'api' and conclude_task is false, next_subtask must be specified (non-empty string). "
+                f"Got next_subtask_type='api' with next_subtask='{self.next_subtask}' and conclude_task='{self.conclude_task}'"
+            )
+
         return self
 
 

@@ -203,18 +203,6 @@ async def search_files_recursive(
 
 
 @mcp.tool()
-async def read_file(path: str) -> str:
-    """
-    Read the complete contents of a file as text. DEPRECATED: Use read_text_file instead.
-
-    Args:
-        path: Path to the file to read
-    """
-    valid_path = validate_path(path)
-    return await read_file_content(valid_path)
-
-
-@mcp.tool()
 async def read_text_file(path: str, tail: Optional[int] = None, head: Optional[int] = None) -> str:
     """
     Read the complete contents of a file from the file system as text.

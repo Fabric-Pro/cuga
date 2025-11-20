@@ -380,8 +380,8 @@ class CugaAgent:
                 step_count += 1
                 final_state = chunk
 
-                logger.debug(f"Chunk keys: {list(chunk.keys())}")
-                logger.debug(f"Has script: {'script' in chunk}, script value: {chunk.get('script', 'N/A')}")
+                # logger.debug(f"Chunk keys: {list(chunk.keys())}")
+                logger.debug(f"Has script: {'script' in chunk}")
 
                 if "script" in chunk and chunk["script"]:
                     code = chunk["script"]
@@ -471,15 +471,42 @@ class CugaAgent:
                 final_context = {}
                 if final_state and "context" in final_state:
                     full_context = final_state["context"]
-                    if keep_last_n_vars > 0 and len(full_context) > keep_last_n_vars:
-                        context_items = list(full_context.items())
-                        final_context = dict(context_items[-keep_last_n_vars:])
+
+                    # Separate initial context variables from newly created ones
+                    initial_var_names = set(initial_context.keys()) if initial_context else set()
+                    new_var_names = [k for k in full_context.keys() if k not in initial_var_names]
+
+                    # Keep initial context variables
+                    final_context = {k: v for k, v in full_context.items() if k in initial_var_names}
+
+                    # Apply keep_last_n_vars only to newly created variables
+                    if keep_last_n_vars > 0 and len(new_var_names) > keep_last_n_vars:
+                        # Keep only the last N newly created variables
+                        vars_to_keep = new_var_names[-keep_last_n_vars:]
+                        for var_name in vars_to_keep:
+                            final_context[var_name] = full_context[var_name]
+
+                        # Remove newly created variables that are not being kept from var_manager
+                        from cuga.backend.cuga_graph.nodes.api.variables_manager.manager import (
+                            VariablesManager,
+                        )
+
+                        var_manager = VariablesManager()
+                        vars_to_remove = new_var_names[:-keep_last_n_vars]  # All except last N new vars
+                        for var_name in vars_to_remove:
+                            if var_manager.remove_variable(var_name):
+                                logger.debug(f"Removed variable '{var_name}' from var_manager")
+
                         logger.debug(
-                            f"Kept last {keep_last_n_vars} of {len(full_context)} variables in context for next turn"
+                            f"Kept last {keep_last_n_vars} of {len(new_var_names)} newly created variables (plus {len(initial_var_names)} initial vars)"
                         )
                     else:
-                        final_context = full_context
-                        logger.debug(f"Preserving {len(final_context)} variables in context for next turn")
+                        # Keep all newly created variables
+                        for var_name in new_var_names:
+                            final_context[var_name] = full_context[var_name]
+                        logger.debug(
+                            f"Preserving all {len(new_var_names)} newly created variables (plus {len(initial_var_names)} initial vars)"
+                        )
 
                 state_messages.append(
                     AIMessage(content=output.model_dump_json(), additional_kwargs={"context": final_context})
@@ -644,6 +671,9 @@ async def __async_main():
     if new_vars:
         var_manager = VariablesManager()
         for var_name, var_value in new_vars.items():
+            # Remove old version if it exists (keep only the last one)
+            # if var_manager.remove_variable(var_name):
+            #     logger.debug(f"Removed previous version of variable '{var_name}' from var_manager")
             # Add to variable manager
             var_manager.add_variable(var_value, name=var_name, description="Created during code execution")
 

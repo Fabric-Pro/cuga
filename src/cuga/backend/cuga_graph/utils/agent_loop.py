@@ -164,7 +164,6 @@ class StreamEvent(BaseModel):
 
         Now correctly handles data that contains newlines by parsing from the last \n\n.
         """
-        logger.debug(f"Parsing {formatted_str}")
 
         # Find the last occurrence of \n\n to split the string
         last_double_newline = formatted_str.rfind('\n\n')
@@ -364,7 +363,7 @@ class AgentLoop:
         event = {}
         async for event in event_stream:
             event_msg = self.get_event_message(event)
-            logger.debug(f"current event: {event_msg.format()}")
+            # logger.debug(f"current event: {event_msg.format()}")
             yield event_msg.format()
         yield self.get_output(event)
 
@@ -418,5 +417,5 @@ class AgentLoop:
         async for event in event_stream:
             event_msg = self.get_event_message(event)
             await self.show_chat_even(event_msg)
-            logger.debug(f"current event: {event_msg.format()}")
+            # logger.debug(f"current event: {event_msg.format()}")
         return self.get_output(event)

@@ -182,8 +182,6 @@ class CodeAgent(BaseAgent):
             logger.error(f"Error running code: {e}")
             execution_output = str(e)
 
-        logger.debug(f"Execution output: {execution_output}")
-
         # Process the output
         out, remaining_text = self.get_last_nonempty_line(execution_output, limit=5)
         steps_summary = []
