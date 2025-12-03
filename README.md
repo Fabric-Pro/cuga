@@ -1,3 +1,15 @@
+---
+title: CUGA Agent
+emoji: 🤖
+colorFrom: purple
+colorTo: blue
+sdk: docker
+sdk_version: "4.36"
+app_file: app.py
+pinned: false
+app_port: 7860
+---
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="/docs/images/cuga-dark.png">
   <source media="(prefers-color-scheme: light)" srcset="/docs/images/cuga-light.png">

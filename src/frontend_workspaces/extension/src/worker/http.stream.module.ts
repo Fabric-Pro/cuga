@@ -3,7 +3,7 @@
 
 import { sleep } from "runtime";
 
-const SERVER_BASE = "http://localhost:8005";
+const SERVER_BASE = process.env.REACT_APP_API_URL || "http://localhost:7860";
 const COMMAND_STREAM_URL = `${SERVER_BASE}/extension/command_stream`;
 const COMMAND_RESULT_URL = `${SERVER_BASE}/extension/command_result`;
 

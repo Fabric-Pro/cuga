@@ -78,9 +78,9 @@ export default function ToolCallFlowDisplay({ toolData }) {
                   className="flex items-center gap-2 px-3 py-1.5 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md transition-colors duration-200 border border-blue-200 hover:border-blue-300"
                   onClick={() => {
                     try {
-                      window.open("http://localhost:8005/flows/flow.html", "_blank");
+                      window.open(`${API_BASE_URL}/flows/flow.html`, "_blank");
                     } catch (error) {
-                      alert("Local server not running. Please start your development server on port 8005.");
+                      alert("Local server not running. Please start your development server.");
                     }
                   }}
                 >

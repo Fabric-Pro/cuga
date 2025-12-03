@@ -550,6 +550,13 @@ def start(
                 logger.info("✅ cuga_workspace directory created")
             else:
                 logger.info(f"✅ cuga_workspace directory found at {workspace_path}")
+
+            # Set hardcoded policies for demo_crm
+            policies_content = "## Plan\nwhen using filesystem use the `./cuga_workspace` dir only"
+            os.environ["CUGA_POLICIES_CONTENT"] = policies_content
+            os.environ["CUGA_LOAD_POLICIES"] = "true"
+            logger.info("📋 Policies configured for demo_crm")
+
             # Clean up any existing processes on the ports we need
             logger.info("🧹 Checking for existing processes on required ports...")
             kill_processes_by_port(

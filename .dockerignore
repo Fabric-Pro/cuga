@@ -34,7 +34,6 @@ yarn-error.log*
 .Trashes
 ehthumbs.db
 Thumbs.db
-uv.lock
 
 # Git
 .git
@@ -63,7 +62,8 @@ logging/trajectory_data
 appworld/experiments/outputs
 logging/code
 
-# Documentation
-docs/
+# Documentation (but include demo_apps for demo_crm)
+docs/**
+!docs/examples/demo_apps/
 README.md
 *.md

@@ -1,2 +1,2 @@
 rm -rf ./dist
-pnpm run build
+NODE_ENV=production pnpm run build

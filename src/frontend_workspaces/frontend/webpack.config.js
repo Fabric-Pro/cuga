@@ -1,5 +1,6 @@
 import HtmlWebpackPlugin from "html-webpack-plugin";
 import CopyWebpackPlugin from "copy-webpack-plugin";
+import TerserPlugin from "terser-webpack-plugin";
 import webpack from "webpack";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -44,7 +45,7 @@ const copyPatterns = fakeStream
   : baseCopyPatterns;
 
 export default {
-  mode: "development",
+  mode: process.env.NODE_ENV === "production" ? "production" : "development",
   entry: "./src/App.tsx",
   output: {
     path: path.resolve(__dirname, "dist"),
@@ -61,14 +62,51 @@ export default {
     },
   },
   optimization: {
+    minimize: process.env.NODE_ENV === "production",
+    minimizer: [
+      new TerserPlugin({
+        terserOptions: {
+          compress: {
+            drop_console: process.env.NODE_ENV === "production",
+            drop_debugger: true,
+            pure_funcs: process.env.NODE_ENV === "production" ? ['console.log', 'console.info'] : [],
+          },
+          format: {
+            comments: false,
+          },
+        },
+        extractComments: false,
+      }),
+    ],
+    usedExports: true,
+    sideEffects: false,
     splitChunks: {
       chunks: "all",
+      maxSize: 244 * 1024,
       cacheGroups: {
+        carbonIcons: {
+          test: /[\\/]node_modules[\\/]@carbon[\\/]icons-react[\\/]/,
+          name: "carbon-icons",
+          priority: 20,
+          reuseExistingChunk: true,
+        },
+        carbonAI: {
+          test: /[\\/]node_modules[\\/]@carbon[\\/]ai-chat[\\/]/,
+          name: "carbon-ai",
+          priority: 15,
+          reuseExistingChunk: true,
+        },
+        reactVendor: {
+          test: /[\\/]node_modules[\\/](react|react-dom)[\\/]/,
+          name: "react-vendor",
+          priority: 10,
+          reuseExistingChunk: true,
+        },
         vendor: {
           test: /[\\/]node_modules[\\/]/,
           name: "vendors",
-          chunks: "all",
-          enforce: true,
+          priority: 5,
+          reuseExistingChunk: true,
         },
       },
     },
@@ -76,18 +114,29 @@ export default {
   module: {
     rules: [
       {
-        test: /\.(ts|tsx|js|jsx)$/, // Combine TypeScript and JavaScript files in one rule
+        test: /\.(ts|tsx|js|jsx)$/,
         exclude: /node_modules/,
         use: {
           loader: "babel-loader",
           options: {
-            presets: ["@babel/preset-env", "@babel/preset-react", "@babel/preset-typescript"],
+            presets: [
+              ["@babel/preset-env", { modules: false }],
+              "@babel/preset-react",
+              "@babel/preset-typescript"
+            ],
           },
         },
       },
       {
         test: /\.css$/,
         use: ["style-loader", "css-loader"],
+      },
+      {
+        test: /\.(woff|woff2|eot|ttf|otf)$/i,
+        type: 'asset/resource',
+        generator: {
+          emit: false,
+        },
       },
     ],
   },
@@ -103,7 +152,7 @@ export default {
       FAKE_STREAM: JSON.stringify(fakeStream),
     }),
   ],
-  devtool: "source-map",
+  devtool: process.env.NODE_ENV === "production" ? false : "source-map",
   devServer: {
     static: path.join(__dirname, "dist"),
     compress: true,

@@ -1,7 +1,7 @@
 import { fetchEventSource } from "@microsoft/fetch-event-source";
 import { ChatInstance, CustomSendMessageOptions, GenericItem, MessageRequest, StreamChunk } from "@carbon/ai-chat";
 import { streamStateManager } from "./StreamManager";
-import { RESPONSE_USER_PROFILE } from "./constants";
+import { RESPONSE_USER_PROFILE, API_BASE_URL } from "./constants";
 
 // When built without webpack DefinePlugin, `FAKE_STREAM` may not exist at runtime.
 // Declare it for TypeScript and compute a safe value that won't throw if undefined.
@@ -327,7 +327,7 @@ const fetchStreamingData = async (instance: ChatInstance, query: string, action:
     console.log("🌊 Beginning stream connection");
 
     // Start streaming with abort signal
-    await fetchEventSource("http://localhost:8005/stream", {
+    await fetchEventSource(`${API_BASE_URL}/stream`, {
       headers: {
         "Content-Type": "application/json",
       },

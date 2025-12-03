@@ -33,7 +33,7 @@ class StreamStateManager {
     }
 
     try {
-      const response = await fetch("http://localhost:8005/stop", {
+      const response = await fetch(`${API_BASE_URL}/stop`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

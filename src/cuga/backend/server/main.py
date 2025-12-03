@@ -21,6 +21,7 @@ from loguru import logger
 from cuga.backend.cuga_graph.state.agent_state import VariablesManager
 
 from cuga.backend.activity_tracker.tracker import ActivityTracker
+from cuga.configurations.instructions_manager import InstructionsManager
 from cuga.backend.tools_env.registry.utils.api_utils import get_apps, get_apis
 from cuga.cli import start_extension_browser_if_configured
 from cuga.backend.browser_env.browser.extension_env_async import ExtensionEnv
@@ -215,6 +216,18 @@ async def manage_save_reuse_server():
 async def lifespan(app: FastAPI):
     """Asynchronous context manager for application startup and shutdown."""
     logger.info("Application is starting up...")
+
+    # Load hardcoded policies if configured via environment variable
+    if os.getenv("CUGA_LOAD_POLICIES", "false").lower() in ("true", "1", "yes", "on"):
+        try:
+            policies_content = os.getenv("CUGA_POLICIES_CONTENT", "")
+            if policies_content:
+                logger.info("Loading hardcoded policies")
+                instructions_manager = InstructionsManager()
+                instructions_manager.set_instructions_from_one_file(policies_content)
+                logger.success("✅ Policies loaded successfully")
+        except Exception as e:
+            logger.error(f"Failed to load policies: {e}")
 
     # Start the save_reuse server if configured
 
@@ -875,12 +888,12 @@ async def save_mode_config(request: Request):
         mode = data.get("mode", "balanced")
 
         # Update lite_mode setting based on mode
-        if mode == "fast":
-            settings.advanced_features.lite_mode = True
-            logger.info("Lite mode enabled (lite_mode = True)")
-        elif mode == "balanced":
-            settings.advanced_features.lite_mode = False
-            logger.info("Balanced mode enabled (lite_mode = False)")
+        # if mode == "fast":
+        #     settings.advanced_features.lite_mode = True
+        #     logger.info("Lite mode enabled (lite_mode = True)")
+        # elif mode == "balanced":
+        #     settings.advanced_features.lite_mode = False
+        #     logger.info("Balanced mode enabled (lite_mode = False)")
 
         logger.info(f"Execution mode changed to: {mode}")
         return JSONResponse({"status": "success", "mode": mode})
@@ -966,7 +979,7 @@ async def save_agent_mode_config(request: Request):
 async def get_workspace_tree():
     """Endpoint to retrieve the workspace folder tree."""
     try:
-        workspace_path = Path("./cuga_workspace")
+        workspace_path = Path(os.getcwd()) / "cuga_workspace"
 
         if not workspace_path.exists():
             workspace_path.mkdir(parents=True, exist_ok=True)
@@ -1009,7 +1022,7 @@ async def get_workspace_file(path: str):
         # Security check: ensure the path is within cuga_workspace
         try:
             file_path = file_path.resolve()
-            workspace_path = Path("./cuga_workspace").resolve()
+            workspace_path = (Path(os.getcwd()) / "cuga_workspace").resolve()
             file_path.relative_to(workspace_path)
         except (ValueError, RuntimeError):
             raise HTTPException(status_code=403, detail="Access denied: Path outside workspace")
@@ -1048,7 +1061,7 @@ async def download_workspace_file(path: str):
         # Security check: ensure the path is within cuga_workspace
         try:
             file_path = file_path.resolve()
-            workspace_path = Path("./cuga_workspace").resolve()
+            workspace_path = (Path(os.getcwd()) / "cuga_workspace").resolve()
             file_path.relative_to(workspace_path)
         except (ValueError, RuntimeError):
             raise HTTPException(status_code=403, detail="Access denied: Path outside workspace")
@@ -1078,7 +1091,7 @@ async def delete_workspace_file(path: str):
         # Security check: ensure the path is within cuga_workspace
         try:
             file_path = file_path.resolve()
-            workspace_path = Path("./cuga_workspace").resolve()
+            workspace_path = (Path(os.getcwd()) / "cuga_workspace").resolve()
             file_path.relative_to(workspace_path)
         except (ValueError, RuntimeError):
             raise HTTPException(status_code=403, detail="Access denied: Path outside workspace")
@@ -1106,7 +1119,7 @@ async def upload_workspace_file(file: UploadFile = File(...)):
     """Endpoint to upload a file to the workspace."""
     try:
         # Create workspace directory if it doesn't exist
-        workspace_path = Path("./cuga_workspace")
+        workspace_path = Path(os.getcwd()) / "cuga_workspace"
         workspace_path.mkdir(exist_ok=True)
 
         # Sanitize filename and prevent directory traversal
