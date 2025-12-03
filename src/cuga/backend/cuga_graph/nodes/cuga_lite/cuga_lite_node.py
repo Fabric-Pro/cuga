@@ -50,35 +50,28 @@ class CugaLiteNode(BaseNode):
     def __init__(self, langfuse_handler: Optional[Any] = None):
         super().__init__()
         self.name = "CugaLite"
-        self.agent: CugaAgent = None
-        self.initialized = False
         self.langfuse_handler = langfuse_handler
 
-    async def initialize_agent(self, app_names=None, force_reinit=False):
-        """Initialize the CugaAgent with optional app filtering."""
-        if not self.initialized or force_reinit:
-            if force_reinit and self.initialized:
-                logger.info("Re-initializing CugaLite agent with new app configuration...")
-                self.initialized = False  # Reset initialization flag
+    async def create_agent(self, app_names=None):
+        """Create and initialize a new CugaAgent with optional app filtering."""
+        logger.info("Initializing new CugaLite agent instance...")
+
+        langfuse_handler = self.langfuse_handler
+        if langfuse_handler is None and settings.advanced_features.langfuse_tracing:
+            if LangfuseCallbackHandler is not None:
+                langfuse_handler = LangfuseCallbackHandler()
+                logger.info("Langfuse tracing enabled for CugaLite")
             else:
-                logger.info("Initializing CugaLite agent...")
+                logger.warning("Langfuse tracing enabled but langfuse package not available")
 
-            # Create langfuse handler if not provided and tracing is enabled
-            if self.langfuse_handler is None and settings.advanced_features.langfuse_tracing:
-                if LangfuseCallbackHandler is not None:
-                    self.langfuse_handler = LangfuseCallbackHandler()
-                    logger.info("Langfuse tracing enabled for CugaLite")
-                else:
-                    logger.warning("Langfuse tracing enabled but langfuse package not available")
-
-            self.agent = CugaAgent(
-                app_names=app_names,
-                langfuse_handler=self.langfuse_handler,
-                instructions=get_all_instructions_formatted(),
-            )
-            await self.agent.initialize()
-            self.initialized = True
-            logger.info(f"CugaLite initialized with {len(self.agent.tools)} tools")
+        agent = CugaAgent(
+            app_names=app_names,
+            langfuse_handler=langfuse_handler,
+            instructions=get_all_instructions_formatted(),
+        )
+        await agent.initialize()
+        logger.info(f"CugaLite agent initialized with {len(agent.tools)} tools")
+        return agent
 
     async def node(self, state: AgentState) -> Command[Literal['FinalAnswerAgent']]:
         """Execute the CugaAgent for fast task execution.
@@ -109,20 +102,16 @@ class CugaLiteNode(BaseNode):
         # Use sub_task as the input if available (preferred over state.input)
         task_input = state.sub_task if state.sub_task else state.input
 
-        # Check state.sub_task_app first (single app from API planner)
+        # Determine app configuration
         if state.sub_task_app:
             app_names = [state.sub_task_app]
             logger.info(f"Using app from state.sub_task_app: {app_names}")
-            # Force re-initialization for new sub_task_app
-            await self.initialize_agent(app_names=app_names, force_reinit=True)
         elif state.api_intent_relevant_apps:
             app_names = [app.name for app in state.api_intent_relevant_apps if app.type == 'api']
             logger.info(f"Using apps from state.api_intent_relevant_apps: {app_names}")
-            # Initialize agent if not already done
-            await self.initialize_agent(app_names=app_names)
-        else:
-            # Initialize agent if not already done
-            await self.initialize_agent()
+
+        # Create a local agent instance for this execution
+        agent = await self.create_agent(app_names=app_names)
 
         # Add execution start message
         state.messages.append(
@@ -130,8 +119,8 @@ class CugaLiteNode(BaseNode):
                 content=json.dumps(
                     {
                         "status": "executing",
-                        "message": f"Executing task with {len(self.agent.tools)} available tools",
-                        "tools_count": len(self.agent.tools),
+                        "message": f"Executing task with {len(agent.tools)} available tools",
+                        "tools_count": len(agent.tools),
                     }
                 )
             )
@@ -150,7 +139,7 @@ class CugaLiteNode(BaseNode):
         logger.info(f"Variables summary: {state.variables_manager.get_variables_summary()}")
 
         # Execute the task - messages will be added automatically by CugaAgent
-        answer, metrics, updated_messages = await self.agent.execute(
+        answer, metrics, updated_messages = await agent.execute(
             task_input,
             recursion_limit=15,
             show_progress=False,
@@ -264,8 +253,8 @@ class CugaLiteNode(BaseNode):
         )
 
         # Log Langfuse trace ID if available
-        if self.agent and self.langfuse_handler:
-            trace_id = self.agent.get_langfuse_trace_id()
+        if agent and self.langfuse_handler:
+            trace_id = agent.get_langfuse_trace_id()
             if trace_id:
                 logger.info(f"Langfuse Trace ID: {trace_id}")
                 print(f"🔍 Langfuse Trace ID: {trace_id}")

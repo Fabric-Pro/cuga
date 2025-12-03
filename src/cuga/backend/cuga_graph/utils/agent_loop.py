@@ -33,8 +33,6 @@ from enum import Enum
 
 from cuga.backend.cuga_graph.state.agent_state import AgentState
 
-tracker = ActivityTracker()
-
 
 class OutputFormat(str, Enum):
     WXO = "wxo"
@@ -42,10 +40,13 @@ class OutputFormat(str, Enum):
 
 
 class TokenUsageTracker(AsyncCallbackHandler):
+    def __init__(self, tracker: ActivityTracker):
+        self.tracker = tracker
+
     async def on_llm_end(self, response: LLMResult, **kwargs):
         generation = response.generations[0][0].text
-        tracker.collect_prompt(role="assistant", value=generation)
-        tracker.collect_tokens_usage(response.llm_output.get("token_usage").get("total_tokens"))
+        self.tracker.collect_prompt(role="assistant", value=generation)
+        self.tracker.collect_tokens_usage(response.llm_output.get("token_usage").get("total_tokens"))
 
     def split_system_human(self, text):
         """
@@ -107,10 +108,10 @@ class TokenUsageTracker(AsyncCallbackHandler):
         result1 = self.split_system_human(pmt)
         if result1:
             system1, human1 = result1
-            tracker.collect_prompt(role="system", value=system1)
-            tracker.collect_prompt(role="human", value=human1)
+            self.tracker.collect_prompt(role="system", value=system1)
+            self.tracker.collect_prompt(role="human", value=human1)
         else:
-            tracker.collect_prompt(role="system", value=pmt)
+            self.tracker.collect_prompt(role="system", value=pmt)
 
 
 class AgentLoopAnswer(BaseModel):
@@ -268,6 +269,7 @@ class AgentLoop:
         thread_id: str,
         langfuse_handler: Optional[Any],
         graph: CompiledStateGraph,
+        tracker: ActivityTracker,
         env_pointer: Optional[BrowserEnvGymAsync | ExtensionEnv] = None,
         logger_name: str = 'agent_loop',
     ):
@@ -275,6 +277,7 @@ class AgentLoop:
         self.thread_id = thread_id
         self.langfuse_handler = langfuse_handler
         self.graph = graph
+        self.tracker = tracker
         self.logger = logging.getLogger(logger_name)
 
     async def stream_event(self, event: StreamEvent) -> Generator[str, None, None]:
@@ -306,7 +309,7 @@ class AgentLoop:
     def get_stream(self, state, resume=None):
         both_none = state is None and resume is None
 
-        callbacks = [TokenUsageTracker()]
+        callbacks = [TokenUsageTracker(self.tracker)]
         if settings.advanced_features.langfuse_tracing and self.langfuse_handler is not None:
             callbacks.insert(0, self.langfuse_handler)
 

@@ -8,6 +8,7 @@ import sys
 import base64
 import json
 import mimetypes
+import argparse
 from pathlib import Path
 from typing import List, Optional, Dict, Any
 from datetime import datetime
@@ -21,6 +22,9 @@ mcp = FastMCP("secure-filesystem-server", port=8112)
 
 # Global allowed directories
 allowed_directories: List[str] = []
+
+# Global read-only mode flag - check command line args early for decorator evaluation
+read_only_mode: bool = "--read-only" in sys.argv
 
 
 def normalize_path(p: str) -> str:
@@ -202,7 +206,14 @@ async def search_files_recursive(
 # Tool definitions using FastMCP decorators
 
 
-@mcp.tool()
+def conditional_tool(func):
+    """Conditionally register tool based on read_only_mode flag."""
+    if not read_only_mode or func.__name__ == "read_text_file":
+        return mcp.tool()(func)
+    return func
+
+
+@conditional_tool
 async def read_text_file(path: str, tail: Optional[int] = None, head: Optional[int] = None) -> str:
     """
     Read the complete contents of a file from the file system as text.
@@ -229,7 +240,7 @@ async def read_text_file(path: str, tail: Optional[int] = None, head: Optional[i
     return await read_file_content(valid_path)
 
 
-@mcp.tool()
+@conditional_tool
 async def read_media_file(path: str) -> Dict[str, str]:
     """
     Read an image or audio file. Returns the base64 encoded data and MIME type.
@@ -260,7 +271,7 @@ async def read_media_file(path: str) -> Dict[str, str]:
     }
 
 
-@mcp.tool()
+@conditional_tool
 async def read_multiple_files(paths: List[str]) -> str:
     """
     Read the contents of multiple files simultaneously. This is more efficient than reading
@@ -286,7 +297,7 @@ async def read_multiple_files(paths: List[str]) -> str:
     return "\n---\n".join(results)
 
 
-@mcp.tool()
+@conditional_tool
 async def write_file(path: str, content: str) -> str:
     """
     Create a new file or completely overwrite an existing file with new content.
@@ -302,7 +313,7 @@ async def write_file(path: str, content: str) -> str:
     return f"Successfully wrote to {path}"
 
 
-@mcp.tool()
+@conditional_tool
 async def edit_file(path: str, edits: List[Dict[str, str]], dryRun: bool = False) -> str:
     """
     Make line-based edits to a text file. Each edit replaces exact line sequences
@@ -318,7 +329,7 @@ async def edit_file(path: str, edits: List[Dict[str, str]], dryRun: bool = False
     return await apply_file_edits(valid_path, edits, dryRun)
 
 
-@mcp.tool()
+@conditional_tool
 async def create_directory(path: str) -> str:
     """
     Create a new directory or ensure a directory exists. Can create multiple nested
@@ -334,7 +345,7 @@ async def create_directory(path: str) -> str:
     return f"Successfully created directory {path}"
 
 
-@mcp.tool()
+@conditional_tool
 async def list_directory(path: str) -> str:
     """
     Get a detailed listing of all files and directories in a specified path.
@@ -357,7 +368,7 @@ async def list_directory(path: str) -> str:
     return "\n".join(formatted)
 
 
-@mcp.tool()
+@conditional_tool
 async def list_directory_with_sizes(path: str, sortBy: str = "name") -> str:
     """
     Get a detailed listing of all files and directories in a specified path, including sizes.
@@ -411,7 +422,7 @@ async def list_directory_with_sizes(path: str, sortBy: str = "name") -> str:
     return "\n".join(formatted)
 
 
-@mcp.tool()
+@conditional_tool
 async def directory_tree(path: str, excludePatterns: List[str] = None) -> str:
     """
     Get a recursive tree view of files and directories as a JSON structure.
@@ -465,7 +476,7 @@ async def directory_tree(path: str, excludePatterns: List[str] = None) -> str:
     return json.dumps(tree_data, indent=2)
 
 
-@mcp.tool()
+@conditional_tool
 async def move_file(source: str, destination: str) -> str:
     """
     Move or rename files and directories. Can move files between directories and rename
@@ -487,7 +498,7 @@ async def move_file(source: str, destination: str) -> str:
     return f"Successfully moved {source} to {destination}"
 
 
-@mcp.tool()
+@conditional_tool
 async def search_files(path: str, pattern: str, excludePatterns: List[str] = None) -> str:
     """
     Recursively search for files and directories matching a pattern.
@@ -513,7 +524,7 @@ async def search_files(path: str, pattern: str, excludePatterns: List[str] = Non
     return "\n".join(results)
 
 
-@mcp.tool()
+@conditional_tool
 async def get_file_info(path: str) -> str:
     """
     Retrieve detailed metadata about a file or directory. Returns comprehensive information
@@ -530,7 +541,7 @@ async def get_file_info(path: str) -> str:
     return "\n".join(f"{key}: {value}" for key, value in info.items())
 
 
-@mcp.tool()
+@conditional_tool
 async def list_allowed_directories() -> str:
     """
     Returns the list of directories that this server is allowed to access.
@@ -547,10 +558,31 @@ async def list_allowed_directories() -> str:
 # Main entry point
 def main():
     """Main entry point for the server."""
-    args = sys.argv[1:]
+    parser = argparse.ArgumentParser(
+        description="Secure MCP Filesystem Server",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument(
+        "--read-only",
+        action="store_true",
+        help="Expose only the read_text_file tool, hide all other tools",
+    )
+    parser.add_argument(
+        "directories",
+        nargs="*",
+        help="Allowed directories (at least one required)",
+    )
 
-    if len(args) == 0:
-        print("Usage: mcp-server-filesystem [allowed-directory] [additional-directories...]", file=sys.stderr)
+    args = parser.parse_args()
+
+    global read_only_mode
+    read_only_mode = args.read_only
+
+    if not args.directories:
+        print(
+            "Usage: mcp-server-filesystem [--read-only] [allowed-directory] [additional-directories...]",
+            file=sys.stderr,
+        )
         print("Note: Allowed directories can be provided via:", file=sys.stderr)
         print("  1. Command-line arguments (shown above)", file=sys.stderr)
         print("  2. MCP roots protocol (if client supports it)", file=sys.stderr)
@@ -562,7 +594,7 @@ def main():
 
     # Process and validate allowed directories
     dirs = []
-    for dir_path in args:
+    for dir_path in args.directories:
         expanded = expand_home(dir_path)
         absolute = os.path.abspath(expanded)
 
@@ -590,6 +622,8 @@ def main():
 
     print("Secure MCP Filesystem Server running", file=sys.stderr)
     print(f"Allowed directories: {dirs}", file=sys.stderr)
+    if read_only_mode:
+        print("Read-only mode: Only read_text_file tool is exposed", file=sys.stderr)
 
     # Run the server
     mcp.run(transport="sse")

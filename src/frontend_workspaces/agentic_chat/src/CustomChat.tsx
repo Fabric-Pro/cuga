@@ -55,6 +55,22 @@ export function CustomChat({ onVariablesUpdate, onFileAutocompleteOpen, onFileHo
   const [filteredFiles, setFilteredFiles] = useState<Array<{ name: string; path: string }>>([]);
   const [selectedFileIndex, setSelectedFileIndex] = useState(0);
   const [selectedFiles, setSelectedFiles] = useState<Array<{ name: string; path: string; id: string }>>([]);
+  const [threadId, setThreadId] = useState<string>("");
+  const [showExampleUtterances, setShowExampleUtterances] = useState(true);
+  const [isInputFocused, setIsInputFocused] = useState(false);
+
+  const exampleUtterances = [
+    "from contacts.txt show me which users belong to the crm system",
+    "send an email to example@gmail.com",
+    "list my emails",
+    "get top account by revenue from crm",
+    "show me accounts with revenue greater than 100000",
+  ];
+
+  // Initialize threadId on mount
+  useEffect(() => {
+    setThreadId(crypto.randomUUID());
+  }, []);
 
   // Create a simple chat instance interface
   const createChatInstance = useCallback((): ChatInstance => {
@@ -219,6 +235,7 @@ export function CustomChat({ onVariablesUpdate, onFileAutocompleteOpen, onFileHo
     inputRef.current.innerHTML = '';
     setInputValue("");
     setSelectedFiles([]);
+    setShowExampleUtterances(false);
     setIsProcessing(true);
 
     // Create a new chat instance for this message
@@ -239,7 +256,7 @@ export function CustomChat({ onVariablesUpdate, onFileAutocompleteOpen, onFileHo
 
     try {
       // Call the streaming workflow with processed text (bracket format converted to ./path)
-      await fetchStreamingData(newChatInstance as any, processedText);
+      await fetchStreamingData(newChatInstance as any, processedText, undefined, threadId);
     } catch (error) {
       console.error("Error sending message:", error);
     } finally {
@@ -249,10 +266,16 @@ export function CustomChat({ onVariablesUpdate, onFileAutocompleteOpen, onFileHo
 
   const handleRestart = async () => {
     // Reset backend
+    const newThreadId = crypto.randomUUID();
+    setThreadId(newThreadId);
+    
     try {
       const response = await fetch('/reset', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Thread-ID': newThreadId
+        },
       });
     } catch (error) {
       console.error("Error calling reset endpoint:", error);
@@ -268,6 +291,8 @@ export function CustomChat({ onVariablesUpdate, onFileAutocompleteOpen, onFileHo
       },
     ]);
     setIsProcessing(false);
+    setInputValue("");
+    setShowExampleUtterances(true);
     
     // Create a fresh chat instance
     currentChatInstanceRef.current = createChatInstance();
@@ -278,6 +303,13 @@ export function CustomChat({ onVariablesUpdate, onFileAutocompleteOpen, onFileHo
     const text = target.textContent || '';
 
     setInputValue(text);
+    
+    // Hide examples when user starts typing
+    if (text.trim().length > 0) {
+      setShowExampleUtterances(false);
+    } else {
+      setShowExampleUtterances(isInputFocused);
+    }
 
     // Check for @ trigger
     const lastAtIndex = text.lastIndexOf('@');
@@ -487,6 +519,38 @@ export function CustomChat({ onVariablesUpdate, onFileAutocompleteOpen, onFileHo
     }
   };
 
+  const handleExampleClick = (utterance: string) => {
+    if (!inputRef.current) return;
+    
+    // Set the input content to the example utterance
+    inputRef.current.textContent = utterance;
+    setInputValue(utterance);
+    setShowExampleUtterances(false);
+    
+    // Focus the input
+    inputRef.current.focus();
+    
+    // Trigger input handler to update state
+    handleContentEditableInput({ currentTarget: inputRef.current } as any);
+  };
+
+  const handleInputFocus = () => {
+    setIsInputFocused(true);
+    if (!inputValue.trim()) {
+      setShowExampleUtterances(true);
+    }
+  };
+
+  const handleInputBlur = () => {
+    setIsInputFocused(false);
+    // Delay hiding to allow click events on examples
+    setTimeout(() => {
+      if (!inputValue.trim()) {
+        setShowExampleUtterances(false);
+      }
+    }, 200);
+  };
+
   const handleKeyPress = (e: React.KeyboardEvent<HTMLDivElement>) => {
     // Check if cursor is inside a file chip
     const selection = window.getSelection();
@@ -626,6 +690,28 @@ export function CustomChat({ onVariablesUpdate, onFileAutocompleteOpen, onFileHo
 
       <div className="custom-chat-input-area">
         <StopButton location="sidebar" />
+        {showExampleUtterances && !inputValue.trim() && (
+          <div className="example-utterances-widget">
+            <div className="example-utterances-header">
+              <span className="example-utterances-title">💡 Try these examples:</span>
+            </div>
+            <div className="example-utterances-list">
+              {exampleUtterances.map((utterance, index) => (
+                <button
+                  key={index}
+                  className="example-utterance-chip"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    handleExampleClick(utterance);
+                  }}
+                  type="button"
+                >
+                  {utterance}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         <div className="chat-input-container">
           <div className="textarea-wrapper">
             <div
@@ -637,6 +723,8 @@ export function CustomChat({ onVariablesUpdate, onFileAutocompleteOpen, onFileHo
               onClick={handleContentEditableClick}
               onKeyDown={handleKeyPress}
               onPaste={handlePaste}
+              onFocus={handleInputFocus}
+              onBlur={handleInputBlur}
               data-placeholder="Type your message... (use @ for file autocomplete - add multiple files)"
               style={{
                 minHeight: "44px",

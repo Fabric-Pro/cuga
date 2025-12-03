@@ -15,7 +15,7 @@ from cuga.backend.cuga_graph.nodes.human_in_the_loop.followup_model import Actio
 from cuga.config import settings
 
 # Define server and registry commands
-DEMO_COMMAND = ["uv", "run", "demo"]  # Assuming demo runs on port 8005 as per main.py
+DEMO_COMMAND = ["uv", "run", "demo"]  # Assuming demo runs on port 7860 as per settings.toml
 REGISTRY_COMMAND = ["uv", "run", "registry"]  # Assuming default port for registry
 DIGITAL_SALES_MCP_COMMAND = ["uv", "run", "digital_sales_openapi"]  # Digital sales MCP server
 

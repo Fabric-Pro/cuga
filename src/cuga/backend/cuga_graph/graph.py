@@ -47,7 +47,7 @@ from cuga.backend.cuga_graph.nodes.cuga_lite.cuga_lite_node import CugaLiteNode
 
 
 class DynamicAgentGraph:
-    def __init__(self, configurations):
+    def __init__(self, configurations, langfuse_handler=None):
         self.task_decomposition_agent = TaskDecompositionNode(TaskDecompositionAgent.create())
         self.plan_controller_agent = PlanControllerNode(PlanControllerAgent.create())
         self.final_answer_agent = FinalAnswerNode(FinalAnswerAgent.create())
@@ -64,7 +64,7 @@ class DynamicAgentGraph:
         self.api_planner = ApiPlanner(APIPlannerAgent.create())
         self.api_shortlister = ApiShortlister(ShortlisterAgent.create())
         self.api_coder = ApiCoder(CodeAgent.create())
-        self.cuga_lite = CugaLiteNode()
+        self.cuga_lite = CugaLiteNode(langfuse_handler=langfuse_handler)
         self.graph = None
 
     async def build_graph(self):

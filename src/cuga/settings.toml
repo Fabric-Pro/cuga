@@ -35,7 +35,7 @@ decomposition_strategy = "flexible"  # "exact" = one subtask per app, "flexible"
 
 [server_ports]
 registry = 8001
-demo = 8005
+demo = 7860
 apis_url = 9000
 saved_flows = 8003
 environment_url = 8000

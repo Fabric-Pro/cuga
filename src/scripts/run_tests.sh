@@ -66,6 +66,7 @@ else
     run_pytest ./src/cuga/backend/tools_env/code_sandbox/tests/
     run_pytest ./src/system_tests/e2e/balanced_test.py ./src/system_tests/e2e/fast_test.py ./src/system_tests/e2e/test_runtime_tools.py
     run_pytest ./src/cuga/backend/cuga_graph/nodes/api/code_agent/test_extract_codeblocks.py
+    # run_pytest ./src/system_tests/e2e/load_test.py # SKIP for CI as it might take a lot of resources
     run_pytest_with_memory ./src/system_tests/unit/test_memory.py ./src/system_tests/e2e/test_memory_integration.py
 fi
 

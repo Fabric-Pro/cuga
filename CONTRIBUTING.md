@@ -231,7 +231,7 @@ For local development and testing:
    - Uses: `mcp_servers.yaml`
 
 2. **Cuga Demo** - Runs the main FastAPI server for demo
-   - Port: 8005
+   - Port: 7860
 
 **To run demo mode:**
 

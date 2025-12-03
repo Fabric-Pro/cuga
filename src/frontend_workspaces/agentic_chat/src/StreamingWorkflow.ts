@@ -270,7 +270,7 @@ const addStreamMessage = async (
   }
 };
 
-const fetchStreamingData = async (instance: ChatInstance, query: string, action: object = null) => {
+const fetchStreamingData = async (instance: ChatInstance, query: string, action: object = null, threadId?: string) => {
   // Check if we should use fake streaming
   if (USE_FAKE_STREAM) {
     console.log("Using fake stream simulation");
@@ -330,6 +330,7 @@ const fetchStreamingData = async (instance: ChatInstance, query: string, action:
     await fetchEventSource(`${API_BASE_URL}/stream`, {
       headers: {
         "Content-Type": "application/json",
+        ...(threadId ? { "X-Thread-ID": threadId } : {}),
       },
       method: "POST",
       body: query ? JSON.stringify({ query }) : JSON.stringify(action),

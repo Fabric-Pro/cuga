@@ -264,7 +264,7 @@ cp system_tests/profiling/config/default_experiment.yaml system_tests/profiling/
 
 ### Port Conflicts
 
-The scripts automatically clean up processes on ports 8000, 8001, 8005.
+The scripts automatically clean up processes on ports 8000, 8001, 7860.
 
 ### Missing Credentials
 

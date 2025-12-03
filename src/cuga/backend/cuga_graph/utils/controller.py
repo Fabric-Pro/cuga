@@ -186,7 +186,12 @@ class AgentRunner:
         sites: List[str] = None,
         current_datetime: Optional[str] = None,
     ) -> Optional[ExperimentResult]:
-        agent = DynamicAgentGraph(None)
+        langfuse_handler = None
+        if settings.advanced_features.langfuse_tracing and LangfuseCallbackHandler is not None:
+            langfuse_handler = LangfuseCallbackHandler()
+            logger.debug("Langfuse tracing enabled for agent loop")
+
+        agent = DynamicAgentGraph(None, langfuse_handler=langfuse_handler)
         await agent.build_graph()
         state: AgentState = default_state(
             page=self.env.page if self.env else None,
@@ -196,16 +201,12 @@ class AgentRunner:
         state.sites = sites
         await self.browser_update_state(state)
 
-        langfuse_handler = None
-        if settings.advanced_features.langfuse_tracing and LangfuseCallbackHandler is not None:
-            langfuse_handler = LangfuseCallbackHandler()
-            logger.debug("Langfuse tracing enabled for agent loop")
-
         self.agent_loop_obj = AgentLoop(
             thread_id=self.thread_id,
             langfuse_handler=langfuse_handler,
             graph=agent.graph,
             env_pointer=self.env,
+            tracker=tracker,
         )
         state.current_datetime = current_datetime if current_datetime else datetime.datetime.now().isoformat()
         state.pi = tracker.pi
@@ -284,7 +285,12 @@ class AgentRunner:
         session_id: str = None,
         current_datetime: Optional[str] = None,
     ) -> AsyncGenerator[Union[ExperimentResult, StreamEvent], None]:
-        agent = DynamicAgentGraph(None)
+        langfuse_handler = None
+        if settings.advanced_features.langfuse_tracing and LangfuseCallbackHandler is not None:
+            langfuse_handler = LangfuseCallbackHandler()
+            logger.debug("Langfuse tracing enabled for agent loop")
+
+        agent = DynamicAgentGraph(None, langfuse_handler=langfuse_handler)
         await agent.build_graph()
         state: AgentState = default_state(
             page=self.env.page if self.env else None,
@@ -293,11 +299,6 @@ class AgentRunner:
         )
         state.sites = sites
         await self.browser_update_state(state)
-
-        langfuse_handler = None
-        if settings.advanced_features.langfuse_tracing and LangfuseCallbackHandler is not None:
-            langfuse_handler = LangfuseCallbackHandler()
-            logger.debug("Langfuse tracing enabled for agent loop")
 
         self.agent_loop_obj = AgentLoop(
             thread_id=self.thread_id,

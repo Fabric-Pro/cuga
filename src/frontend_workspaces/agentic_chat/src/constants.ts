@@ -1,5 +1,12 @@
 import { UserType } from "@carbon/ai-chat";
 
+// Declare process for webpack environment variable injection
+declare const process: {
+  env: {
+    REACT_APP_API_URL?: string;
+  };
+} | undefined;
+
 export const RESPONSE_USER_PROFILE = {
   id: "ai-chatbot-user",
   userName: "CUGA",
@@ -12,7 +19,7 @@ export const RESPONSE_USER_PROFILE = {
 
 // Get the base URL for the backend API
 // In production (HF Spaces), use the current origin
-// In development, use localhost with port 7860 (HF Spaces default)
+// In development, use localhost with port 7860 (default port)
 export const getApiBaseUrl = (): string => {
   // If running in Hugging Face Spaces or production, use current origin
   if (typeof window !== 'undefined') {
@@ -24,9 +31,14 @@ export const getApiBaseUrl = (): string => {
     }
   }
   
-  // Default to localhost:7860 for local development (HF Spaces port)
+  // Default to localhost:7860 for local development
   // This can be overridden by setting REACT_APP_API_URL environment variable
-  return process.env.REACT_APP_API_URL || 'http://localhost:7860';
+  // Note: In browser, process.env is injected by webpack at build time
+  if (typeof process !== 'undefined' && process?.env?.REACT_APP_API_URL) {
+    return process.env.REACT_APP_API_URL;
+  }
+  
+  return 'http://localhost:7860';
 };
 
 export const API_BASE_URL = getApiBaseUrl();

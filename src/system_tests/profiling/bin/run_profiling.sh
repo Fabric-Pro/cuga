@@ -99,7 +99,7 @@ fi
 
 # Kill any existing processes on the ports we'll use
 echo "Cleaning up existing processes..."
-lsof -ti:8000,8001,8005 | xargs kill -9 2>/dev/null || true
+lsof -ti:8000,8001,7860 | xargs kill -9 2>/dev/null || true
 
 echo "Starting Digital Sales Task Profiler..."
 echo "Profiling Root: $PROFILING_ROOT"

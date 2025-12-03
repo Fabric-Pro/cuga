@@ -12,6 +12,38 @@ echo "🔄 Creating clean branch..."
 TEMP_BRANCH="hf-clean-$(date +%s)"
 
 git checkout --orphan $TEMP_BRANCH || exit 1
+
+# Add HuggingFace Spaces header to README.md
+echo "📝 Adding HuggingFace Spaces header to README.md..."
+HF_HEADER="---
+title: CUGA Agent
+emoji: 🤖
+colorFrom: purple
+colorTo: blue
+sdk: docker
+sdk_version: \"4.36\"
+app_file: app.py
+pinned: false
+app_port: 7860
+---
+
+"
+
+# Check if README.md exists
+if [ -f "README.md" ]; then
+  # Check if header already exists
+  if ! grep -q "^---" README.md || ! grep -q "title: CUGA Agent" README.md; then
+    # Prepend header to README.md
+    echo "$HF_HEADER$(cat README.md)" > README.md
+    echo "✅ Added HuggingFace Spaces header to README.md"
+  else
+    echo "ℹ️  README.md already has HuggingFace Spaces header"
+  fi
+else
+  echo "⚠️  README.md not found, creating with header..."
+  echo "$HF_HEADER" > README.md
+fi
+
 git add -A
 git commit --no-verify -m "feat: docker-v1 with optimized frontend
 

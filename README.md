@@ -1,15 +1,3 @@
----
-title: CUGA Agent
-emoji: 🤖
-colorFrom: purple
-colorTo: blue
-sdk: docker
-sdk_version: "4.36"
-app_file: app.py
-pinned: false
-app_port: 7860
----
-
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="/docs/images/cuga-dark.png">
   <source media="(prefers-color-scheme: light)" srcset="/docs/images/cuga-light.png">
@@ -208,7 +196,7 @@ echo "OPENAI_API_KEY=your-openai-api-key-here" > .env
 # 4. Start the demo
 cuga start demo
 
-# Chrome will open automatically at https://localhost:8005
+# Chrome will open automatically at https://localhost:7860
 # then try sending your task to CUGA: 'get top account by revenue from digital sales'
 
 # 5. View agent trajectories (optional)

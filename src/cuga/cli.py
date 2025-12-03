@@ -415,12 +415,17 @@ def start(
         "--sandbox",
         help="Enable remote sandbox mode with llm-sandbox (requires --group sandbox to be installed)",
     ),
+    read_only: bool = typer.Option(
+        False,
+        "--read-only",
+        help="For demo_crm: Start filesystem server in read-only mode (only read_text_file tool exposed)",
+    ),
 ):
     """
     Start the specified service.
 
     Available services:
-      - demo: Starts both registry and demo agent directly (registry on port 8001, demo on port 8005)
+      - demo: Starts both registry and demo agent directly (registry on port 8001, demo on port 7860)
       - demo_crm: Starts CRM demo with email MCP, mail sink, and CRM API servers
       - registry: Starts only the registry service directly (uvicorn on port 8001)
       - appworld: Starts AppWorld environment and API servers (environment on port 8000, api on port 9000)
@@ -430,6 +435,7 @@ def start(
       cuga start demo                # Start with local sandbox (default)
       cuga start demo --sandbox      # Start with remote sandbox (Docker/Podman)
       cuga start demo_crm            # Start CRM demo with all required services
+      cuga start demo_crm --read-only  # Start CRM demo with read-only filesystem
       cuga start registry            # Start registry only
       cuga start appworld            # Start AppWorld servers
       cuga start memory              # Start memory service
@@ -599,17 +605,17 @@ def start(
             time.sleep(2)
 
             # Start filesystem MCP server
-            run_direct_service(
+            filesystem_cmd = [
+                "uvx",
+                "--refresh",
+                "--from",
+                "./docs/examples/demo_apps/file_system",
                 "filesystem-server",
-                [
-                    "uvx",
-                    "--refresh",
-                    "--from",
-                    "./docs/examples/demo_apps/file_system",
-                    "filesystem-server",
-                    workspace_path,
-                ],
-            )
+            ]
+            if read_only:
+                filesystem_cmd.append("--read-only")
+            filesystem_cmd.append(workspace_path)
+            run_direct_service("filesystem-server", filesystem_cmd)
             logger.info("Filesystem MCP server started")
             time.sleep(2)
 
