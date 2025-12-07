@@ -829,6 +829,10 @@ class ActivityTracker(object):
         num_steps: Optional[int] = None,
         fail_category: Optional[str] = None,
         agent_v: Optional[str] = None,
+        duration: Optional[int] = None,
+        api_calls: Optional[int] = None,
+        total_llm_calls: Optional[int] = None,
+        total_tokens: Optional[int] = None,
     ) -> str:
         """
         Mark a task as finished and update result files.
@@ -862,6 +866,10 @@ class ActivityTracker(object):
             "num_steps": num_steps,
             "fail_category": fail_category,
             "agent_v": agent_v,
+            "duration": duration,
+            "total_llm_calls": total_llm_calls,
+            "total_tokens": total_tokens,
+            "api_calls": api_calls,
         }
 
         # Update result files only if tracker is enabled
@@ -900,6 +908,10 @@ class ActivityTracker(object):
             'num_steps',
             'fail_category',
             'agent_v',
+            'duration',
+            'total_llm_calls',
+            'total_tokens',
+            'api_calls',
         ]
 
         if not self.tasks:
