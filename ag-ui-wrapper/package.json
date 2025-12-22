@@ -1,0 +1,27 @@
+{
+  "name": "cuga-ag-ui-wrapper",
+  "version": "1.0.0",
+  "description": "AG-UI protocol wrapper for CUGA agent",
+  "type": "module",
+  "main": "dist/server.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch server.ts",
+    "start": "node dist/server.js",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.14.1",
+    "@repo/agent-core": "workspace:*",
+    "@repo/agent-types": "workspace:*",
+    "hono": "^4.7.10",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.21",
+    "@types/uuid": "^10.0.0",
+    "tsx": "^4.19.4",
+    "typescript": "^5.9.3"
+  }
+}
+
