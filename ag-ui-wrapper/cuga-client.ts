@@ -143,19 +143,40 @@ export async function* streamQuery(
 
 /**
  * Resume CUGA execution after human-in-the-loop
+ *
+ * IMPORTANT: CUGA uses the same /stream endpoint for resume operations.
+ * When you send an ActionResponse object (with action_id), it treats it as a resume.
+ * The action can be 'approve', 'reject', or 'modify'.
  */
 export async function* resumeExecution(
   request: CugaResumeRequest
 ): AsyncGenerator<CugaSSEEvent> {
-  const url = new URL('/resume', CUGA_BASE_URL);
-  
+  // CUGA uses the /stream endpoint for both initial queries and resume operations
+  // When the body contains action_id, it's treated as an ActionResponse for resume
+  const url = new URL('/stream', CUGA_BASE_URL);
+
+  // Build ActionResponse format expected by CUGA backend
+  // See: cuga/backend/cuga_graph/nodes/human_in_the_loop/followup_model.py
+  const actionResponse = {
+    action_id: request.thread_id, // Use thread_id as action_id for correlation
+    action: request.action, // 'approve', 'reject', or 'modify'
+    modified_value: request.modified_value || null,
+  };
+
+  console.log('[CUGA-Client] Resuming execution with ActionResponse:', {
+    thread_id: request.thread_id,
+    action: request.action,
+    hasModifiedValue: !!request.modified_value,
+  });
+
   const response = await fetch(url.toString(), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Accept': 'text/event-stream',
+      'X-Thread-ID': request.thread_id,
     },
-    body: JSON.stringify(request),
+    body: JSON.stringify(actionResponse),
   });
 
   if (!response.ok) {

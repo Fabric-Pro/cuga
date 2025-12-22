@@ -367,7 +367,7 @@ function extractUserMessage(input: {
   threadId?: string;
   contextId?: string;
   metadata?: Record<string, unknown>;
-}): { query: string; threadId: string; history: Array<{ role: string; content: string }> } {
+}): { query: string; threadId: string; history: Array<{ role: 'user' | 'assistant' | 'system'; content: string }> } {
   const messages = input.messages || [];
   const lastMessage = messages[messages.length - 1];
   const userMessage = lastMessage?.content || '';
@@ -375,14 +375,20 @@ function extractUserMessage(input: {
   const threadId = input.threadId || input.contextId || uuidv4();
 
   // Extract history from messages (all except the last one) or from metadata
-  let history: Array<{ role: string; content: string }> = [];
+  let history: Array<{ role: 'user' | 'assistant' | 'system'; content: string }> = [];
 
   // First, check if history is passed in metadata (from A2A protocol)
   if (input.metadata?.history && Array.isArray(input.metadata.history)) {
-    history = input.metadata.history as Array<{ role: string; content: string }>;
+    history = (input.metadata.history as Array<{ role: string; content: string }>).map(msg => ({
+      role: (msg.role === 'user' || msg.role === 'assistant' || msg.role === 'system' ? msg.role : 'user') as 'user' | 'assistant' | 'system',
+      content: msg.content,
+    }));
   } else if (messages.length > 1) {
     // Otherwise, use all messages except the last one as history
-    history = messages.slice(0, -1);
+    history = messages.slice(0, -1).map(msg => ({
+      role: (msg.role === 'user' || msg.role === 'assistant' || msg.role === 'system' ? msg.role : 'user') as 'user' | 'assistant' | 'system',
+      content: msg.content,
+    }));
   }
 
   return { query: userMessage, threadId, history };
@@ -604,14 +610,20 @@ const { app, start } = createUnifiedServer(
       },
     };
   },
-  // A2A streaming executor
+  // A2A streaming executor with auto-resume support for interrupts
   async function* (input: { messages?: Array<{ role: string; content: string }>; threadId?: string; contextId?: string; metadata?: Record<string, unknown> }) {
     const { query, threadId, history } = extractUserMessage(input);
+
+    // Check if auto_approve is enabled (default true for autonomous execution)
+    const autoApprove = input.metadata?.auto_approve !== false;
+    const maxAutoResumes = 5; // Prevent infinite loops
+    let autoResumeCount = 0;
 
     console.log('[CUGA-Wrapper] A2A streaming with:', {
       queryLength: query.length,
       threadId,
       historyLength: history.length,
+      autoApprove,
     });
 
     if (!query) {
@@ -626,8 +638,11 @@ const { app, start } = createUnifiedServer(
       streamingContent: '',
     };
 
-    try {
-      for await (const event of streamQuery({ query, thread_id: threadId, api_mode: true, history, auto_approve: true })) {
+    // Helper function to process stream events
+    async function* processStream(
+      eventStream: AsyncGenerator<CugaSSEEvent>
+    ): AsyncGenerator<{ type: 'text' | 'error'; text?: string; error?: string }> {
+      for await (const event of eventStream) {
         const updates = transformCugaEvent(event, currentState);
         currentState = { ...currentState, ...updates };
 
@@ -638,28 +653,74 @@ const { app, start } = createUnifiedServer(
         } else if (event.name === 'Stopped') {
           yield { type: 'error' as const, error: 'Execution stopped by user' };
         } else if (event.name === '__interrupt__') {
-          yield {
-            type: 'text' as const,
-            text: `[HITL Required] ${currentState.hitlRequests?.[0]?.message || 'Human approval needed'}`
-          };
+          // Handle interrupt - either auto-resume or yield HITL request
+          if (autoApprove && autoResumeCount < maxAutoResumes) {
+            autoResumeCount++;
+            console.log(`[CUGA-Wrapper] Auto-resuming after interrupt (${autoResumeCount}/${maxAutoResumes})`);
+            yield { type: 'text' as const, text: `[Auto-approving action ${autoResumeCount}...]` };
+            // Signal that we need to resume
+            return;
+          } else {
+            yield {
+              type: 'text' as const,
+              text: `[HITL Required] ${currentState.hitlRequests?.[0]?.message || 'Human approval needed'}`
+            };
+          }
         } else if (currentState.streamingContent) {
           yield { type: 'text' as const, text: currentState.streamingContent };
           currentState.streamingContent = '';
         }
+      }
+    }
+
+    try {
+      // Initial stream
+      let needsResume = false;
+      for await (const result of processStream(streamQuery({ query, thread_id: threadId, api_mode: true, history, auto_approve: autoApprove }))) {
+        yield result;
+        // Check if we hit an interrupt that needs auto-resume
+        if (result.type === 'text' && result.text?.includes('[Auto-approving action')) {
+          needsResume = true;
+        }
+      }
+
+      // Auto-resume loop for interrupts
+      while (needsResume && autoResumeCount <= maxAutoResumes) {
+        needsResume = false;
+        console.log(`[CUGA-Wrapper] Resuming execution for thread ${threadId}`);
+
+        // Resume with approve action
+        for await (const result of processStream(resumeExecution({ thread_id: threadId, action: 'approve' }))) {
+          yield result;
+          if (result.type === 'text' && result.text?.includes('[Auto-approving action')) {
+            needsResume = true;
+          }
+        }
+      }
+
+      if (autoResumeCount >= maxAutoResumes) {
+        console.warn(`[CUGA-Wrapper] Max auto-resumes (${maxAutoResumes}) reached for thread ${threadId}`);
+        yield { type: 'text' as const, text: '[Max auto-approvals reached. Manual intervention may be required.]' };
       }
     } catch (error) {
       console.error('[CUGA-Wrapper] A2A stream error:', error);
       yield { type: 'error' as const, error: error instanceof Error ? error.message : 'Stream error' };
     }
   },
-  // Platform streaming executor for CopilotKit LangGraphAgent
+  // Platform streaming executor for CopilotKit LangGraphAgent with auto-resume support
   async function* (input: { messages?: Array<{ role: string; content: string }>; threadId?: string; contextId?: string; metadata?: Record<string, unknown> }): AsyncGenerator<LangGraphStreamEvent> {
     const { query, threadId, history } = extractUserMessage(input);
+
+    // Check if auto_approve is enabled (default true for autonomous execution)
+    const autoApprove = input.metadata?.auto_approve !== false;
+    const maxAutoResumes = 5;
+    let autoResumeCount = 0;
 
     console.log('[CUGA-Wrapper] Platform streaming with:', {
       queryLength: query.length,
       threadId,
       historyLength: history.length,
+      autoApprove,
     });
 
     if (!query) {
@@ -679,20 +740,72 @@ const { app, start } = createUnifiedServer(
       streamingContent: '',
     };
 
-    try {
-      // Stream from CUGA and transform to AG-UI/LangGraph Platform events
-      // Pass history for context in follow-up questions, auto_approve for autonomous execution
-      for await (const event of streamQuery({ query, thread_id: threadId, api_mode: true, history, auto_approve: true })) {
+    // Helper to process stream and detect interrupts
+    async function* processStream(
+      eventStream: AsyncGenerator<CugaSSEEvent>
+    ): AsyncGenerator<{ event: LangGraphStreamEvent; needsResume: boolean }> {
+      for await (const event of eventStream) {
         const updates = transformCugaEvent(event, state);
         state = { ...state, ...updates };
 
         console.log(`[CUGA-Wrapper] Platform stream update from node: ${event.name}`);
 
+        // Check for interrupt that needs auto-resume
+        if (event.name === '__interrupt__' && autoApprove && autoResumeCount < maxAutoResumes) {
+          autoResumeCount++;
+          console.log(`[CUGA-Wrapper] Platform auto-resuming after interrupt (${autoResumeCount}/${maxAutoResumes})`);
+          yield {
+            event: {
+              nodeName: 'AutoResume',
+              state: { ...state, autoResumeCount, message: `Auto-approving action ${autoResumeCount}...` },
+              isFinal: false,
+            },
+            needsResume: true,
+          };
+          return;
+        }
+
         // Yield the update event in LangGraph Platform format
         yield {
-          nodeName: event.name,
-          state: { ...state },
-          isFinal: event.name === 'Answer',
+          event: {
+            nodeName: event.name,
+            state: { ...state },
+            isFinal: event.name === 'Answer',
+          },
+          needsResume: false,
+        };
+      }
+    }
+
+    try {
+      // Initial stream
+      let needsResume = false;
+      for await (const { event, needsResume: resume } of processStream(streamQuery({ query, thread_id: threadId, api_mode: true, history, auto_approve: autoApprove }))) {
+        yield event;
+        if (resume) {
+          needsResume = true;
+        }
+      }
+
+      // Auto-resume loop for interrupts
+      while (needsResume && autoResumeCount <= maxAutoResumes) {
+        needsResume = false;
+        console.log(`[CUGA-Wrapper] Platform resuming execution for thread ${threadId}`);
+
+        for await (const { event, needsResume: resume } of processStream(resumeExecution({ thread_id: threadId, action: 'approve' }))) {
+          yield event;
+          if (resume) {
+            needsResume = true;
+          }
+        }
+      }
+
+      if (autoResumeCount >= maxAutoResumes) {
+        console.warn(`[CUGA-Wrapper] Platform max auto-resumes (${maxAutoResumes}) reached for thread ${threadId}`);
+        yield {
+          nodeName: 'Warning',
+          state: { ...state, warning: 'Max auto-approvals reached. Manual intervention may be required.' },
+          isFinal: false,
         };
       }
     } catch (error) {
