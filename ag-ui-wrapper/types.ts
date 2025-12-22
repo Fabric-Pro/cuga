@@ -102,12 +102,24 @@ export interface CugaCodeExecutionEvent {
 }
 
 /**
+ * Conversation History Message
+ */
+export interface CugaHistoryMessage {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+}
+
+/**
  * CUGA Query Request
  */
 export interface CugaQueryRequest {
   query: string;
   thread_id?: string;
   api_mode?: boolean;
+  /** Conversation history for context in follow-up questions */
+  history?: CugaHistoryMessage[];
+  /** Whether to auto-approve HITL requests (for autonomous execution) */
+  auto_approve?: boolean;
 }
 
 /**

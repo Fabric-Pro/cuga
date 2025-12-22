@@ -359,21 +359,33 @@ function transformCugaEvent(
 }
 
 /**
- * Extract user message from input
+ * Extract user message and conversation history from input
  * Handles both AG-UI messages array format and direct string content
  */
 function extractUserMessage(input: {
   messages?: Array<{ role: string; content: string }>;
   threadId?: string;
   contextId?: string;
-}): { query: string; threadId: string } {
+  metadata?: Record<string, unknown>;
+}): { query: string; threadId: string; history: Array<{ role: string; content: string }> } {
   const messages = input.messages || [];
   const lastMessage = messages[messages.length - 1];
   const userMessage = lastMessage?.content || '';
   // Use threadId from input, or contextId (from A2A), or generate new one
   const threadId = input.threadId || input.contextId || uuidv4();
 
-  return { query: userMessage, threadId };
+  // Extract history from messages (all except the last one) or from metadata
+  let history: Array<{ role: string; content: string }> = [];
+
+  // First, check if history is passed in metadata (from A2A protocol)
+  if (input.metadata?.history && Array.isArray(input.metadata.history)) {
+    history = input.metadata.history as Array<{ role: string; content: string }>;
+  } else if (messages.length > 1) {
+    // Otherwise, use all messages except the last one as history
+    history = messages.slice(0, -1);
+  }
+
+  return { query: userMessage, threadId, history };
 }
 
 // Create unified server
@@ -398,12 +410,13 @@ const { app, start } = createUnifiedServer(
     maxAutonomyLevel: 'task', // Can handle complete tasks autonomously
   },
   // Invoke function - non-streaming execution
-  async (input: { messages?: Array<{ role: string; content: string }>; threadId?: string; contextId?: string }) => {
-    const { query, threadId } = extractUserMessage(input);
+  async (input: { messages?: Array<{ role: string; content: string }>; threadId?: string; contextId?: string; metadata?: Record<string, unknown> }) => {
+    const { query, threadId, history } = extractUserMessage(input);
 
     console.log('[CUGA-Wrapper] Invoking CUGA (sync) with:', {
       queryLength: query.length,
       threadId,
+      historyLength: history.length,
       inputKeys: Object.keys(input),
     });
 
@@ -436,8 +449,9 @@ const { app, start } = createUnifiedServer(
     };
 
     // Collect all events from CUGA stream
+    // Pass history for context in follow-up questions, auto_approve for autonomous execution
     try {
-      for await (const event of streamQuery({ query, thread_id: threadId, api_mode: true })) {
+      for await (const event of streamQuery({ query, thread_id: threadId, api_mode: true, history, auto_approve: true })) {
         console.log(`[CUGA-Wrapper] Event: ${event.name}`);
 
         // Update state with each event to capture code executions, subtasks, etc.
@@ -591,12 +605,13 @@ const { app, start } = createUnifiedServer(
     };
   },
   // A2A streaming executor
-  async function* (input: { messages?: Array<{ role: string; content: string }>; threadId?: string; contextId?: string }) {
-    const { query, threadId } = extractUserMessage(input);
+  async function* (input: { messages?: Array<{ role: string; content: string }>; threadId?: string; contextId?: string; metadata?: Record<string, unknown> }) {
+    const { query, threadId, history } = extractUserMessage(input);
 
     console.log('[CUGA-Wrapper] A2A streaming with:', {
       queryLength: query.length,
       threadId,
+      historyLength: history.length,
     });
 
     if (!query) {
@@ -612,7 +627,7 @@ const { app, start } = createUnifiedServer(
     };
 
     try {
-      for await (const event of streamQuery({ query, thread_id: threadId, api_mode: true })) {
+      for await (const event of streamQuery({ query, thread_id: threadId, api_mode: true, history, auto_approve: true })) {
         const updates = transformCugaEvent(event, currentState);
         currentState = { ...currentState, ...updates };
 
@@ -638,12 +653,13 @@ const { app, start } = createUnifiedServer(
     }
   },
   // Platform streaming executor for CopilotKit LangGraphAgent
-  async function* (input: { messages?: Array<{ role: string; content: string }>; threadId?: string; contextId?: string }): AsyncGenerator<LangGraphStreamEvent> {
-    const { query, threadId } = extractUserMessage(input);
+  async function* (input: { messages?: Array<{ role: string; content: string }>; threadId?: string; contextId?: string; metadata?: Record<string, unknown> }): AsyncGenerator<LangGraphStreamEvent> {
+    const { query, threadId, history } = extractUserMessage(input);
 
     console.log('[CUGA-Wrapper] Platform streaming with:', {
       queryLength: query.length,
       threadId,
+      historyLength: history.length,
     });
 
     if (!query) {
@@ -665,7 +681,8 @@ const { app, start } = createUnifiedServer(
 
     try {
       // Stream from CUGA and transform to AG-UI/LangGraph Platform events
-      for await (const event of streamQuery({ query, thread_id: threadId, api_mode: true })) {
+      // Pass history for context in follow-up questions, auto_approve for autonomous execution
+      for await (const event of streamQuery({ query, thread_id: threadId, api_mode: true, history, auto_approve: true })) {
         const updates = transformCugaEvent(event, state);
         state = { ...state, ...updates };
 

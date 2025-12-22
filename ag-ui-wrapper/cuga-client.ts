@@ -30,10 +30,34 @@ function parseSSEEvent(eventStr: string): CugaSSEEvent | null {
 }
 
 /**
+ * Build context string from conversation history
+ * Summarizes history for context in follow-up questions
+ */
+function buildContextFromHistory(history?: Array<{ role: string; content: string }>): string {
+  if (!history || history.length === 0) {
+    return '';
+  }
+
+  // Take last 5 messages for context (to avoid token limits)
+  const recentHistory = history.slice(-5);
+
+  const contextParts = recentHistory.map((msg, idx) => {
+    const role = msg.role === 'user' ? 'User' : 'Assistant';
+    // Truncate long messages
+    const content = msg.content.length > 500
+      ? msg.content.substring(0, 500) + '...'
+      : msg.content;
+    return `[${role}]: ${content}`;
+  });
+
+  return `\n\n--- Previous Conversation Context ---\n${contextParts.join('\n')}\n--- End Context ---\n\n`;
+}
+
+/**
  * Stream query to CUGA backend
  *
  * Note: CUGA backend uses /stream endpoint with:
- * - Body: { "query": "..." } (only query field)
+ * - Body: { "query": "...", "history": [...] }
  * - Header: X-Thread-ID for thread tracking
  */
 export async function* streamQuery(
@@ -41,7 +65,7 @@ export async function* streamQuery(
 ): AsyncGenerator<CugaSSEEvent> {
   const url = new URL('/stream', CUGA_BASE_URL);
 
-  console.log(`[CUGA Client] Sending stream request to ${url.toString()} with thread_id: ${request.thread_id}`);
+  console.log(`[CUGA Client] Sending stream request to ${url.toString()} with thread_id: ${request.thread_id}, history: ${request.history?.length || 0} messages`);
 
   // Build headers - CUGA expects thread_id in X-Thread-ID header
   const headers: Record<string, string> = {
@@ -53,12 +77,21 @@ export async function* streamQuery(
     headers['X-Thread-ID'] = request.thread_id;
   }
 
+  // Build query with context from history if available
+  let queryWithContext = request.query;
+  if (request.history && request.history.length > 0) {
+    const context = buildContextFromHistory(request.history);
+    queryWithContext = `${context}Current question: ${request.query}`;
+  }
+
   const response = await fetch(url.toString(), {
     method: 'POST',
     headers,
-    // CUGA backend expects only { "query": "..." } in body
+    // CUGA backend now receives query with context and history
     body: JSON.stringify({
-      query: request.query,
+      query: queryWithContext,
+      history: request.history || [],
+      auto_approve: request.auto_approve || false,
     }),
   });
 
