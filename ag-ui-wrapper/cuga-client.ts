@@ -84,15 +84,15 @@ export async function* streamQuery(
     queryWithContext = `${context}Current question: ${request.query}`;
   }
 
+  // CUGA backend expects one of these formats:
+  // 1. { "query": "..." } - Simple query string
+  // 2. { "action_id": ... } - ActionResponse for resume
+  // 3. { "messages": [...] } - ChatRequest format
+  // We use the simple query format as it's the most straightforward
   const response = await fetch(url.toString(), {
     method: 'POST',
     headers,
-    // CUGA backend now receives query with context and history
-    body: JSON.stringify({
-      query: queryWithContext,
-      history: request.history || [],
-      auto_approve: request.auto_approve || false,
-    }),
+    body: JSON.stringify({ query: queryWithContext }),
   });
 
   if (!response.ok) {
