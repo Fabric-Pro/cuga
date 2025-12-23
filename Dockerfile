@@ -44,6 +44,6 @@ ENV CUGA_HOST=0.0.0.0
 # Override the demo port to match HF Spaces
 ENV DYNACONF_SERVER_PORTS__DEMO=7860
 
-# Start the demo_crm service with read-only filesystem and no email services
-CMD ["uv", "run", "cuga", "start", "demo_crm", "--host", "0.0.0.0", "--read-only", "--no-email"]
+# Start the demo service (simpler than demo_crm, no extra MCP servers needed)
+CMD ["uv", "run", "cuga", "start", "demo", "--host", "0.0.0.0"]
 
