@@ -1,5 +1,13 @@
 FROM python:3.12-slim-trixie
 
+# ============================================================================
+# CRITICAL FOR SSE STREAMING IN DOCKER:
+# Without PYTHONUNBUFFERED, Python buffers stdout/stderr which breaks
+# Server-Sent Events (SSE) streaming. Events get held until buffer fills
+# or stream ends, causing incomplete streaming in Docker but working locally.
+# ============================================================================
+ENV PYTHONUNBUFFERED=1
+
 # The installer requires curl (and certificates) to download the release archive
 RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates && \
     rm -rf /var/lib/apt/lists/*
