@@ -31,13 +31,13 @@ ENV PATH="/root/.local/bin/:$PATH"
 # Set working directory
 WORKDIR /app/agents/langchain/cuga
 
-# Copy dependency files
-COPY agents/langchain/cuga/pyproject.toml agents/langchain/cuga/uv.lock ./
+# Copy dependency files (paths relative to build context = agents/langchain/cuga/)
+COPY pyproject.toml uv.lock ./
 
 # Copy source code
-COPY agents/langchain/cuga/src/ ./src/
-COPY agents/langchain/cuga/docs/ ./docs/
-COPY agents/langchain/cuga/configurations/ ./configurations/
+COPY src/ ./src/
+COPY docs/ ./docs/
+COPY configurations/ ./configurations/
 
 # Install dependencies
 RUN uv sync --group groq
@@ -46,10 +46,10 @@ RUN uv sync --group groq
 RUN mkdir -p /app/cuga_workspace
 
 # Copy example files (optional workspace content)
-COPY agents/langchain/cuga/docs/examples/huggingface/contacts.txt /app/cuga_workspace/contacts.txt
-COPY agents/langchain/cuga/docs/examples/huggingface/cuga_knowledge.md /app/cuga_workspace/cuga_knowledge.md
-COPY agents/langchain/cuga/docs/examples/huggingface/cuga_playbook.md /app/cuga_workspace/cuga_playbook.md
-COPY agents/langchain/cuga/docs/examples/huggingface/email_template.md /app/cuga_workspace/email_template.md
+COPY docs/examples/huggingface/contacts.txt /app/cuga_workspace/contacts.txt
+COPY docs/examples/huggingface/cuga_knowledge.md /app/cuga_workspace/cuga_knowledge.md
+COPY docs/examples/huggingface/cuga_playbook.md /app/cuga_workspace/cuga_playbook.md
+COPY docs/examples/huggingface/email_template.md /app/cuga_workspace/email_template.md
 
 # Environment variables
 ENV NODE_ENV=production
