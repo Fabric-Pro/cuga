@@ -1,4 +1,13 @@
-FROM python:3.12-slim-trixie
+# syntax=docker/dockerfile:1
+
+# CUGA (Computer Use General Agent) Dockerfile for Railway Deployment
+# Python-based agent with optional AG-UI TypeScript wrapper
+#
+# Ports:
+# - 8200: AG-UI wrapper (default external port)
+# - 8201: Python CUGA backend (internal)
+
+FROM python:3.12-slim
 
 # ============================================================================
 # CRITICAL FOR SSE STREAMING IN DOCKER:
@@ -8,28 +17,27 @@ FROM python:3.12-slim-trixie
 # ============================================================================
 ENV PYTHONUNBUFFERED=1
 
-# The installer requires curl (and certificates) to download the release archive
-RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates && \
-    rm -rf /var/lib/apt/lists/*
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
-# Download the latest installer
+# Download and install uv
 ADD https://astral.sh/uv/install.sh /uv-installer.sh
-
-# Run the installer then remove it
 RUN sh /uv-installer.sh && rm /uv-installer.sh
-
-# Ensure the installed binary is on the `PATH`
 ENV PATH="/root/.local/bin/:$PATH"
 
 # Set working directory
-WORKDIR /app
+WORKDIR /app/agents/langchain/cuga
 
 # Copy dependency files
-COPY pyproject.toml uv.lock ./
+COPY agents/langchain/cuga/pyproject.toml agents/langchain/cuga/uv.lock ./
 
 # Copy source code
-COPY src/ ./src/
-COPY docs/ ./docs/
+COPY agents/langchain/cuga/src/ ./src/
+COPY agents/langchain/cuga/docs/ ./docs/
+COPY agents/langchain/cuga/configurations/ ./configurations/
 
 # Install dependencies
 RUN uv sync --group groq
@@ -37,21 +45,25 @@ RUN uv sync --group groq
 # Create cuga_workspace directory
 RUN mkdir -p /app/cuga_workspace
 
-# Copy example files from huggingface examples
-COPY docs/examples/huggingface/contacts.txt /app/cuga_workspace/contacts.txt
-COPY docs/examples/huggingface/cuga_knowledge.md /app/cuga_workspace/cuga_knowledge.md
-COPY docs/examples/huggingface/cuga_playbook.md /app/cuga_workspace/cuga_playbook.md
-COPY docs/examples/huggingface/email_template.md /app/cuga_workspace/email_template.md
+# Copy example files (optional workspace content)
+COPY agents/langchain/cuga/docs/examples/huggingface/contacts.txt /app/cuga_workspace/contacts.txt
+COPY agents/langchain/cuga/docs/examples/huggingface/cuga_knowledge.md /app/cuga_workspace/cuga_knowledge.md
+COPY agents/langchain/cuga/docs/examples/huggingface/cuga_playbook.md /app/cuga_workspace/cuga_playbook.md
+COPY agents/langchain/cuga/docs/examples/huggingface/email_template.md /app/cuga_workspace/email_template.md
 
-# Expose port 7860 (Hugging Face Spaces default)
-EXPOSE 7860
-
-# Set host to 0.0.0.0 to allow external connections
+# Environment variables
+ENV NODE_ENV=production
 ENV CUGA_HOST=0.0.0.0
+ENV PORT=8200
+ENV CUGA_BACKEND_PORT=8200
 
-# Override the demo port to match HF Spaces
-ENV DYNACONF_SERVER_PORTS__DEMO=7860
+# Expose port
+EXPOSE 8200
 
-# Start the demo service (simpler than demo_crm, no extra MCP servers needed)
-CMD ["uv", "run", "cuga", "start", "demo", "--host", "0.0.0.0"]
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+  CMD curl -f http://localhost:8200/health || exit 1
+
+# Start CUGA
+CMD ["uv", "run", "cuga", "start", "demo", "--host", "0.0.0.0", "--port", "8200"]
 
