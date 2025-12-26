@@ -37,7 +37,6 @@ COPY pyproject.toml uv.lock ./
 # Copy source code
 COPY src/ ./src/
 COPY docs/ ./docs/
-COPY configurations/ ./configurations/
 
 # Install dependencies
 RUN uv sync --group groq
