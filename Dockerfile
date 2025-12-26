@@ -64,5 +64,6 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
   CMD curl -f http://localhost:8200/health || exit 1
 
 # Start CUGA
-CMD ["uv", "run", "cuga", "start", "demo", "--host", "0.0.0.0", "--port", "8200"]
+# Port is controlled via DYNACONF_SERVER_PORTS__DEMO environment variable (set in Aspire config)
+CMD ["uv", "run", "cuga", "start", "demo", "--host", "0.0.0.0"]
 
