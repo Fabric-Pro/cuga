@@ -66,6 +66,7 @@ src/system_tests/e2e/logs/
 # Documentation (but include demo_apps for demo_crm and huggingface examples)
 docs/**
 !docs/examples/demo_apps/
+!docs/examples/demo_apps/**
 !docs/examples/huggingface/
+!docs/examples/huggingface/**
 README.md
-*.md
