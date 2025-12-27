@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-# CUGA (Computer Use General Agent) Dockerfile for Railway Deployment
+# CUGA (Computer Use General Agent) Dockerfile for Container Deployment
 # Python-based agent with optional AG-UI TypeScript wrapper
 #
 # Ports:
