@@ -637,20 +637,34 @@ class LLMManager:
             model_settings: Model configuration dictionary (must contain max_tokens)
 
         Multi-tenant support: When request credentials are present (via HTTP headers),
-        a fresh LLM instance is created with those credentials, bypassing the cache.
-        This ensures each tenant uses their own API keys.
+        LLM instances are cached per-tenant (using API key hash as cache key).
+        This ensures each tenant uses their own API keys while avoiding the overhead
+        of creating new instances on every request.
         """
         max_tokens = model_settings.get('max_tokens')
         assert max_tokens is not None, "max_tokens must be specified in model_settings"
 
-        # Multi-tenant mode: If request credentials are present, create a fresh instance
-        # This bypasses the cache to ensure tenant-specific credentials are used
+        # Multi-tenant mode: If request credentials are present, use per-tenant cache
         if has_request_credentials():
             creds = get_request_credentials()
             if creds and creds.api_key:
-                logger.debug(f"Using request credentials for model (provider={creds.provider})")
+                # Create a tenant-specific cache key using a hash of the API key
+                # We hash to avoid storing raw API keys in memory
+                import hashlib
+                api_key_hash = hashlib.sha256(creds.api_key.encode()).hexdigest()[:16]
+                tenant_cache_key = f"tenant:{api_key_hash}:{creds.provider or 'openai'}:{creds.model or 'default'}"
+
+                # Check tenant cache first
+                if tenant_cache_key in self._models:
+                    logger.debug(f"Using cached tenant model: {tenant_cache_key}")
+                    cached_model = self._models[tenant_cache_key]
+                    return self._update_model_parameters(cached_model, temperature=0.1, max_tokens=max_tokens)
+
+                # Create and cache tenant-specific model
+                logger.debug(f"Creating new tenant model: {tenant_cache_key}")
                 llm = self._create_llm_from_request_credentials(creds, model_settings)
                 if llm:
+                    self._models[tenant_cache_key] = llm
                     return self._update_model_parameters(llm, temperature=0.1, max_tokens=max_tokens)
                 logger.warning("Request credentials present but LLM creation failed, falling back to cache")
 
