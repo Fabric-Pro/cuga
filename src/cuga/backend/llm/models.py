@@ -508,10 +508,28 @@ class LLMManager:
             else:
                 logger.debug(f"Skipping temperature for reasoning model: {model_name}")
 
-            # Add API key if specified
+            # Add API key - check multiple sources
             apikey_name = model_settings.get("apikey_name")
+            api_key = None
             if apikey_name:
-                openai_params["openai_api_key"] = os.environ.get(apikey_name)
+                api_key = os.environ.get(apikey_name)
+            # Fallback to standard OPENAI_API_KEY if specific key not found
+            if not api_key:
+                api_key = os.environ.get("OPENAI_API_KEY")
+            if api_key:
+                openai_params["openai_api_key"] = api_key
+            else:
+                # Multi-tenant mode: Use placeholder key for startup
+                # Actual requests will use credentials from HTTP headers
+                # The placeholder allows CUGA to start without env vars
+                logger.warning(
+                    f"No OpenAI API key found. Using placeholder for startup. "
+                    "Set {apikey_name or 'OPENAI_API_KEY'} environment variable "
+                    "or ensure per-request credentials are provided."
+                )
+                # Use a placeholder that looks like a real key format
+                # This will be replaced by request credentials at runtime
+                openai_params["openai_api_key"] = "sk-placeholder-for-multi-tenant-startup"
 
             # Add base URL if specified
             if base_url:
@@ -617,9 +635,25 @@ class LLMManager:
 
         Args:
             model_settings: Model configuration dictionary (must contain max_tokens)
+
+        Multi-tenant support: When request credentials are present (via HTTP headers),
+        a fresh LLM instance is created with those credentials, bypassing the cache.
+        This ensures each tenant uses their own API keys.
         """
         max_tokens = model_settings.get('max_tokens')
         assert max_tokens is not None, "max_tokens must be specified in model_settings"
+
+        # Multi-tenant mode: If request credentials are present, create a fresh instance
+        # This bypasses the cache to ensure tenant-specific credentials are used
+        if has_request_credentials():
+            creds = get_request_credentials()
+            if creds and creds.api_key:
+                logger.debug(f"Using request credentials for model (provider={creds.provider})")
+                llm = self._create_llm_from_request_credentials(creds, model_settings)
+                if llm:
+                    return self._update_model_parameters(llm, temperature=0.1, max_tokens=max_tokens)
+                logger.warning("Request credentials present but LLM creation failed, falling back to cache")
+
         # Check if pre-instantiated model is available
         if self._pre_instantiated_model is not None:
             logger.debug(f"Using pre-instantiated model: {type(self._pre_instantiated_model).__name__}")
