@@ -644,6 +644,60 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Multi-tenant credential middleware
+# Extracts AI credentials from headers and sets them in request context
+from cuga.backend.llm.credential_context import (
+    set_request_credentials,
+    clear_request_credentials,
+)
+
+@app.middleware("http")
+async def credential_injection_middleware(request: Request, call_next):
+    """
+    Middleware to inject AI credentials from HTTP headers into request context.
+
+    This enables multi-tenant support where the AG-UI wrapper resolves
+    tenant-specific credentials and passes them via headers.
+
+    Headers:
+        X-AI-API-Key: The decrypted API key for the AI provider
+        X-AI-Provider: Provider name (openai, anthropic, azure, etc.)
+        X-AI-Model: Model string (e.g., "gpt-4o")
+        X-AI-Base-URL: Optional base URL for custom endpoints
+        X-User-ID: Tenant user ID (for logging/tracking)
+        X-Organization-ID: Tenant org ID (for logging/tracking)
+    """
+    try:
+        # Extract credentials from headers
+        api_key = request.headers.get("X-AI-API-Key")
+        provider = request.headers.get("X-AI-Provider")
+        model = request.headers.get("X-AI-Model")
+        base_url = request.headers.get("X-AI-Base-URL")
+        user_id = request.headers.get("X-User-ID")
+        organization_id = request.headers.get("X-Organization-ID")
+
+        # Set credentials in context if API key is provided
+        if api_key:
+            logger.debug(
+                f"Request credentials received: provider={provider}, model={model}, "
+                f"user_id={user_id}, org_id={organization_id}"
+            )
+            set_request_credentials(
+                api_key=api_key,
+                provider=provider,
+                model=model,
+                base_url=base_url,
+                user_id=user_id,
+                organization_id=organization_id,
+            )
+
+        # Process request
+        response = await call_next(request)
+        return response
+    finally:
+        # Always clear credentials after request processing
+        clear_request_credentials()
+
 if getattr(settings.advanced_features, "use_extension", False):
     print(settings.advanced_features.use_extension)
 

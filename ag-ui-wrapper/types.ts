@@ -250,3 +250,24 @@ export interface CugaHealthResponse {
   mode?: string;
 }
 
+/**
+ * AI Credentials for multi-tenant support
+ *
+ * These are resolved from the Runtime API based on tenant configuration
+ * and passed to the CUGA Python backend via HTTP headers.
+ */
+export interface AICredentials {
+  /** The decrypted API key for the AI provider */
+  apiKey: string;
+  /** Provider name (openai, anthropic, azure, etc.) */
+  provider?: string;
+  /** Model string (e.g., "gpt-4o") */
+  model?: string;
+  /** Base URL for custom endpoints (LiteLLM, Ollama, etc.) */
+  baseUrl?: string;
+  /** Tenant user ID (for logging/tracking) */
+  userId?: string;
+  /** Tenant organization ID (for logging/tracking) */
+  organizationId?: string;
+}
+
