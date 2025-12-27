@@ -9,6 +9,13 @@ from langchain_ibm import ChatWatsonx
 from langchain_core.language_models.chat_models import BaseChatModel
 from loguru import logger
 
+# Multi-tenant credential support
+from cuga.backend.llm.credential_context import (
+    get_request_credentials,
+    has_request_credentials,
+    RequestCredentials,
+)
+
 try:
     from langchain_groq import ChatGroq
 except ImportError:
@@ -327,8 +334,135 @@ class LLMManager:
         reasoning_prefixes = ('o1', 'o3', 'gpt-5')
         return model_name.startswith(reasoning_prefixes)
 
+    def _create_llm_from_request_credentials(
+        self, creds: RequestCredentials, model_settings: Dict[str, Any]
+    ) -> Optional[BaseChatModel]:
+        """
+        Create LLM instance from request-scoped credentials (multi-tenant support).
+
+        This is called when credentials are provided via HTTP headers from the
+        Runtime API (e.g., when called via the AG-UI wrapper in multi-tenant mode).
+
+        Returns None if the credentials don't have required fields.
+        """
+        if not creds.api_key:
+            return None
+
+        temperature = model_settings.get('temperature', 0.7)
+        max_tokens = model_settings.get('max_tokens')
+        assert max_tokens is not None, "max_tokens must be specified"
+
+        # Determine provider from credentials or model string
+        provider = creds.provider or "openai"
+        model_name = creds.model or model_settings.get('model_name', 'gpt-4o')
+
+        # Extract just model name from "provider/model" format if present
+        if "/" in model_name:
+            model_name = model_name.split("/", 1)[1]
+
+        is_reasoning = self._is_reasoning_model(model_name)
+
+        logger.info(
+            f"Creating LLM from request credentials: provider={provider}, "
+            f"model={model_name}, user_id={creds.user_id}, org_id={creds.organization_id}"
+        )
+
+        # Create LLM based on provider
+        if provider in ("openai", "openai_direct", "vercel_gateway"):
+            params = {
+                "model_name": model_name,
+                "max_tokens": max_tokens,
+                "timeout": 61,
+                "openai_api_key": creds.api_key,
+            }
+            if not is_reasoning:
+                params["temperature"] = temperature
+            if creds.base_url:
+                params["openai_api_base"] = creds.base_url
+            return ChatOpenAI(**params)
+
+        elif provider in ("anthropic", "anthropic_direct"):
+            # Anthropic uses OpenAI-compatible API through LiteLLM/gateway
+            params = {
+                "model_name": model_name,
+                "max_tokens": max_tokens,
+                "timeout": 61,
+                "openai_api_key": creds.api_key,
+            }
+            if not is_reasoning:
+                params["temperature"] = temperature
+            if creds.base_url:
+                params["openai_api_base"] = creds.base_url
+            return ChatOpenAI(**params)
+
+        elif provider == "azure":
+            api_version = model_settings.get('api_version', '2024-08-06')
+            if is_reasoning:
+                return AzureChatOpenAI(
+                    model_version=api_version,
+                    timeout=61,
+                    api_version="2025-04-01-preview",
+                    azure_deployment=model_name + "-" + api_version,
+                    max_completion_tokens=max_tokens,
+                    api_key=creds.api_key,
+                )
+            else:
+                return AzureChatOpenAI(
+                    timeout=61,
+                    azure_deployment=model_name + "-" + api_version,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                    api_key=creds.api_key,
+                )
+
+        elif provider == "groq" and ChatGroq:
+            return ChatGroq(
+                max_tokens=max_tokens,
+                model=model_name,
+                temperature=temperature,
+                api_key=creds.api_key,
+            )
+
+        elif provider == "google-genai" and ChatGoogleGenerativeAI:
+            return ChatGoogleGenerativeAI(
+                api_key=creds.api_key,
+                model=model_name,
+                temperature=temperature,
+                max_tokens=max_tokens,
+            )
+
+        else:
+            # Fallback: use OpenAI-compatible interface (works for most gateways)
+            logger.debug(f"Using OpenAI-compatible fallback for provider: {provider}")
+            params = {
+                "model_name": model_name,
+                "max_tokens": max_tokens,
+                "timeout": 61,
+                "openai_api_key": creds.api_key,
+            }
+            if not is_reasoning:
+                params["temperature"] = temperature
+            if creds.base_url:
+                params["openai_api_base"] = creds.base_url
+            return ChatOpenAI(**params)
+
     def _create_llm_instance(self, model_settings: Dict[str, Any]):
-        """Create LLM instance based on platform and settings"""
+        """Create LLM instance based on platform and settings.
+
+        Multi-tenant support: If request credentials are available (set via HTTP
+        headers from the AG-UI wrapper), those take precedence over environment
+        variables and TOML configuration.
+        """
+        # Check for request-scoped credentials (multi-tenant mode)
+        if has_request_credentials():
+            creds = get_request_credentials()
+            if creds and creds.api_key:
+                llm = self._create_llm_from_request_credentials(creds, model_settings)
+                if llm:
+                    return llm
+                logger.warning("Request credentials present but LLM creation failed, falling back to config")
+
+        # Fall back to environment/TOML configuration
         platform = model_settings.get('platform')
         temperature = model_settings.get('temperature', 0.7)
         max_tokens = model_settings.get('max_tokens')
@@ -374,10 +508,28 @@ class LLMManager:
             else:
                 logger.debug(f"Skipping temperature for reasoning model: {model_name}")
 
-            # Add API key if specified
+            # Add API key - check multiple sources
             apikey_name = model_settings.get("apikey_name")
+            api_key = None
             if apikey_name:
-                openai_params["openai_api_key"] = os.environ.get(apikey_name)
+                api_key = os.environ.get(apikey_name)
+            # Fallback to standard OPENAI_API_KEY if specific key not found
+            if not api_key:
+                api_key = os.environ.get("OPENAI_API_KEY")
+            if api_key:
+                openai_params["openai_api_key"] = api_key
+            else:
+                # Multi-tenant mode: Use placeholder key for startup
+                # Actual requests will use credentials from HTTP headers
+                # The placeholder allows CUGA to start without env vars
+                logger.warning(
+                    f"No OpenAI API key found. Using placeholder for startup. "
+                    "Set {apikey_name or 'OPENAI_API_KEY'} environment variable "
+                    "or ensure per-request credentials are provided."
+                )
+                # Use a placeholder that looks like a real key format
+                # This will be replaced by request credentials at runtime
+                openai_params["openai_api_key"] = "sk-placeholder-for-multi-tenant-startup"
 
             # Add base URL if specified
             if base_url:
@@ -483,9 +635,39 @@ class LLMManager:
 
         Args:
             model_settings: Model configuration dictionary (must contain max_tokens)
+
+        Multi-tenant support: When request credentials are present (via HTTP headers),
+        LLM instances are cached per-tenant (using API key hash as cache key).
+        This ensures each tenant uses their own API keys while avoiding the overhead
+        of creating new instances on every request.
         """
         max_tokens = model_settings.get('max_tokens')
         assert max_tokens is not None, "max_tokens must be specified in model_settings"
+
+        # Multi-tenant mode: If request credentials are present, use per-tenant cache
+        if has_request_credentials():
+            creds = get_request_credentials()
+            if creds and creds.api_key:
+                # Create a tenant-specific cache key using a hash of the API key
+                # We hash to avoid storing raw API keys in memory
+                import hashlib
+                api_key_hash = hashlib.sha256(creds.api_key.encode()).hexdigest()[:16]
+                tenant_cache_key = f"tenant:{api_key_hash}:{creds.provider or 'openai'}:{creds.model or 'default'}"
+
+                # Check tenant cache first
+                if tenant_cache_key in self._models:
+                    logger.debug(f"Using cached tenant model: {tenant_cache_key}")
+                    cached_model = self._models[tenant_cache_key]
+                    return self._update_model_parameters(cached_model, temperature=0.1, max_tokens=max_tokens)
+
+                # Create and cache tenant-specific model
+                logger.debug(f"Creating new tenant model: {tenant_cache_key}")
+                llm = self._create_llm_from_request_credentials(creds, model_settings)
+                if llm:
+                    self._models[tenant_cache_key] = llm
+                    return self._update_model_parameters(llm, temperature=0.1, max_tokens=max_tokens)
+                logger.warning("Request credentials present but LLM creation failed, falling back to cache")
+
         # Check if pre-instantiated model is available
         if self._pre_instantiated_model is not None:
             logger.debug(f"Using pre-instantiated model: {type(self._pre_instantiated_model).__name__}")

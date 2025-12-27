@@ -1,13 +1,52 @@
 /**
  * CUGA Client
- * 
- * Client for communicating with the CUGA FastAPI backend
+ *
+ * Client for communicating with the CUGA FastAPI backend.
+ * Supports multi-tenant credential injection via headers.
  */
 
-import type { CugaSSEEvent, CugaQueryRequest, CugaResumeRequest, CugaHealthResponse } from './types.js';
+import type { CugaSSEEvent, CugaQueryRequest, CugaResumeRequest, CugaHealthResponse, AICredentials } from './types.js';
 
 // CUGA demo backend runs on port 7860
 const CUGA_BASE_URL = process.env.CUGA_BASE_URL || 'http://localhost:7860';
+
+/**
+ * Build headers for CUGA request including credential headers if provided
+ */
+function buildHeaders(threadId?: string, credentials?: AICredentials): Record<string, string> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'Accept': 'text/event-stream',
+  };
+
+  if (threadId) {
+    headers['X-Thread-ID'] = threadId;
+  }
+
+  // Add credential headers for multi-tenant support
+  if (credentials) {
+    if (credentials.apiKey) {
+      headers['X-AI-API-Key'] = credentials.apiKey;
+    }
+    if (credentials.provider) {
+      headers['X-AI-Provider'] = credentials.provider;
+    }
+    if (credentials.model) {
+      headers['X-AI-Model'] = credentials.model;
+    }
+    if (credentials.baseUrl) {
+      headers['X-AI-Base-URL'] = credentials.baseUrl;
+    }
+    if (credentials.userId) {
+      headers['X-User-ID'] = credentials.userId;
+    }
+    if (credentials.organizationId) {
+      headers['X-Organization-ID'] = credentials.organizationId;
+    }
+  }
+
+  return headers;
+}
 
 /**
  * Parse SSE event from CUGA stream
@@ -59,23 +98,20 @@ function buildContextFromHistory(history?: Array<{ role: string; content: string
  * Note: CUGA backend uses /stream endpoint with:
  * - Body: { "query": "...", "history": [...] }
  * - Header: X-Thread-ID for thread tracking
+ *
+ * Multi-tenant support: If credentials are provided, they are passed via headers
+ * and the Python backend will use them instead of environment variables.
  */
 export async function* streamQuery(
-  request: CugaQueryRequest
+  request: CugaQueryRequest,
+  credentials?: AICredentials
 ): AsyncGenerator<CugaSSEEvent> {
   const url = new URL('/stream', CUGA_BASE_URL);
 
-  console.log(`[CUGA Client] Sending stream request to ${url.toString()} with thread_id: ${request.thread_id}, history: ${request.history?.length || 0} messages`);
+  console.log(`[CUGA Client] Sending stream request to ${url.toString()} with thread_id: ${request.thread_id}, history: ${request.history?.length || 0} messages, hasCredentials: ${!!credentials}`);
 
-  // Build headers - CUGA expects thread_id in X-Thread-ID header
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    'Accept': 'text/event-stream',
-  };
-
-  if (request.thread_id) {
-    headers['X-Thread-ID'] = request.thread_id;
-  }
+  // Build headers with optional credentials
+  const headers = buildHeaders(request.thread_id, credentials);
 
   // Build query with context from history if available
   let queryWithContext = request.query;
@@ -147,9 +183,13 @@ export async function* streamQuery(
  * IMPORTANT: CUGA uses the same /stream endpoint for resume operations.
  * When you send an ActionResponse object (with action_id), it treats it as a resume.
  * The action can be 'approve', 'reject', or 'modify'.
+ *
+ * Multi-tenant support: If credentials are provided, they are passed via headers
+ * to maintain consistency with the initial query.
  */
 export async function* resumeExecution(
-  request: CugaResumeRequest
+  request: CugaResumeRequest,
+  credentials?: AICredentials
 ): AsyncGenerator<CugaSSEEvent> {
   // CUGA uses the /stream endpoint for both initial queries and resume operations
   // When the body contains action_id, it's treated as an ActionResponse for resume
@@ -167,15 +207,15 @@ export async function* resumeExecution(
     thread_id: request.thread_id,
     action: request.action,
     hasModifiedValue: !!request.modified_value,
+    hasCredentials: !!credentials,
   });
+
+  // Build headers with optional credentials
+  const headers = buildHeaders(request.thread_id, credentials);
 
   const response = await fetch(url.toString(), {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'text/event-stream',
-      'X-Thread-ID': request.thread_id,
-    },
+    headers,
     body: JSON.stringify(actionResponse),
   });
 

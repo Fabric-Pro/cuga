@@ -42,10 +42,12 @@ import {
   type AgentSkill,
   type LangGraphStreamEvent,
 } from '@repo/agent-core';
+import { getRuntimeClient } from '@repo/agent-runtime';
 import { v4 as uuidv4 } from 'uuid';
 
 import { checkHealth, resumeExecution, stopExecution, streamQuery } from './cuga-client.js';
 import type {
+  AICredentials,
   CugaAgentState,
   CugaBrowserScreenshot,
   CugaCodeExecutionEvent,
@@ -58,6 +60,73 @@ import type {
 const PORT = Number.parseInt(process.env.PORT || '9999', 10);
 const HOST = process.env.HOST || '0.0.0.0';
 const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
+
+// Initialize Runtime Client for credential resolution
+// Uses RUNTIME_API_URL environment variable (set by Aspire)
+const runtimeClient = getRuntimeClient();
+
+/**
+ * Resolve AI credentials from Runtime API based on API key
+ *
+ * The wrapper receives requests with tenant API keys and resolves
+ * them to the actual AI provider credentials.
+ */
+async function resolveCredentials(apiKey?: string): Promise<AICredentials | undefined> {
+  if (!apiKey) {
+    console.log('[CUGA-Wrapper] No API key provided, using default credentials from environment');
+    return undefined;
+  }
+
+  try {
+    console.log('[CUGA-Wrapper] Resolving credentials from Runtime API...');
+
+    // Resolve model configuration using the tenant's API key
+    const modelConfig = await runtimeClient.resolveModel({
+      apiKey,
+      taskType: 'COMPLEX', // CUGA handles complex tasks
+    });
+
+    if (!modelConfig) {
+      console.warn('[CUGA-Wrapper] No model config returned, using default credentials');
+      return undefined;
+    }
+
+    console.log('[CUGA-Wrapper] Resolved credentials:', {
+      provider: modelConfig.provider,
+      model: modelConfig.modelString,
+      source: modelConfig.source,
+    });
+
+    // Also resolve tenant context for logging
+    const tenantContext = await runtimeClient.resolveTenant({ apiKey });
+
+    return {
+      apiKey: modelConfig.apiKey,
+      provider: modelConfig.provider,
+      model: modelConfig.modelString,
+      baseUrl: undefined, // Use default for now
+      userId: tenantContext?.userId ?? undefined,
+      organizationId: tenantContext?.organizationId ?? undefined,
+    };
+  } catch (error) {
+    console.error('[CUGA-Wrapper] Failed to resolve credentials:', error);
+    return undefined;
+  }
+}
+
+/**
+ * Extract API key from input metadata
+ */
+function extractApiKey(input: { metadata?: Record<string, unknown> }): string | undefined {
+  // Try different locations where API key might be passed
+  const metadata = input.metadata || {};
+  return (
+    (metadata.apiKey as string) ||
+    (metadata.api_key as string) ||
+    (metadata.fabricApiKey as string) ||
+    (metadata.authorization as string)?.replace('Bearer ', '')
+  );
+}
 
 // Define agent skills for A2A discovery
 const AGENT_SKILLS: AgentSkill[] = [
@@ -439,6 +508,10 @@ const { app, start } = createUnifiedServer(
       };
     }
 
+    // Resolve credentials from Runtime API (multi-tenant support)
+    const apiKey = extractApiKey(input);
+    const credentials = await resolveCredentials(apiKey);
+
     let finalAnswer = '';
     let variables = {};
     let lastError: string | undefined;
@@ -457,7 +530,7 @@ const { app, start } = createUnifiedServer(
     // Collect all events from CUGA stream
     // Pass history for context in follow-up questions, auto_approve for autonomous execution
     try {
-      for await (const event of streamQuery({ query, thread_id: threadId, api_mode: true, history, auto_approve: true })) {
+      for await (const event of streamQuery({ query, thread_id: threadId, api_mode: true, history, auto_approve: true }, credentials)) {
         console.log(`[CUGA-Wrapper] Event: ${event.name}`);
 
         // Update state with each event to capture code executions, subtasks, etc.
@@ -631,6 +704,10 @@ const { app, start } = createUnifiedServer(
       return;
     }
 
+    // Resolve credentials from Runtime API (multi-tenant support)
+    const apiKey = extractApiKey(input);
+    const credentials = await resolveCredentials(apiKey);
+
     let currentState: CugaAgentState = {
       currentNode: 'ChatAgent',
       query,
@@ -660,12 +737,11 @@ const { app, start } = createUnifiedServer(
             yield { type: 'text' as const, text: `[Auto-approving action ${autoResumeCount}...]` };
             // Signal that we need to resume
             return;
-          } else {
-            yield {
-              type: 'text' as const,
-              text: `[HITL Required] ${currentState.hitlRequests?.[0]?.message || 'Human approval needed'}`
-            };
           }
+          yield {
+            type: 'text' as const,
+            text: `[HITL Required] ${currentState.hitlRequests?.[0]?.message || 'Human approval needed'}`
+          };
         } else if (currentState.streamingContent) {
           yield { type: 'text' as const, text: currentState.streamingContent };
           currentState.streamingContent = '';
@@ -674,9 +750,9 @@ const { app, start } = createUnifiedServer(
     }
 
     try {
-      // Initial stream
+      // Initial stream with credentials
       let needsResume = false;
-      for await (const result of processStream(streamQuery({ query, thread_id: threadId, api_mode: true, history, auto_approve: autoApprove }))) {
+      for await (const result of processStream(streamQuery({ query, thread_id: threadId, api_mode: true, history, auto_approve: autoApprove }, credentials))) {
         yield result;
         // Check if we hit an interrupt that needs auto-resume
         if (result.type === 'text' && result.text?.includes('[Auto-approving action')) {
@@ -689,8 +765,8 @@ const { app, start } = createUnifiedServer(
         needsResume = false;
         console.log(`[CUGA-Wrapper] Resuming execution for thread ${threadId}`);
 
-        // Resume with approve action
-        for await (const result of processStream(resumeExecution({ thread_id: threadId, action: 'approve' }))) {
+        // Resume with approve action and credentials
+        for await (const result of processStream(resumeExecution({ thread_id: threadId, action: 'approve' }, credentials))) {
           yield result;
           if (result.type === 'text' && result.text?.includes('[Auto-approving action')) {
             needsResume = true;
@@ -731,6 +807,10 @@ const { app, start } = createUnifiedServer(
       };
       return;
     }
+
+    // Resolve credentials from Runtime API (multi-tenant support)
+    const apiKey = extractApiKey(input);
+    const credentials = await resolveCredentials(apiKey);
 
     // Initialize state
     let state: CugaAgentState = {
@@ -778,9 +858,9 @@ const { app, start } = createUnifiedServer(
     }
 
     try {
-      // Initial stream
+      // Initial stream with credentials
       let needsResume = false;
-      for await (const { event, needsResume: resume } of processStream(streamQuery({ query, thread_id: threadId, api_mode: true, history, auto_approve: autoApprove }))) {
+      for await (const { event, needsResume: resume } of processStream(streamQuery({ query, thread_id: threadId, api_mode: true, history, auto_approve: autoApprove }, credentials))) {
         yield event;
         if (resume) {
           needsResume = true;
@@ -792,7 +872,8 @@ const { app, start } = createUnifiedServer(
         needsResume = false;
         console.log(`[CUGA-Wrapper] Platform resuming execution for thread ${threadId}`);
 
-        for await (const { event, needsResume: resume } of processStream(resumeExecution({ thread_id: threadId, action: 'approve' }))) {
+        // Resume with credentials
+        for await (const { event, needsResume: resume } of processStream(resumeExecution({ thread_id: threadId, action: 'approve' }, credentials))) {
           yield event;
           if (resume) {
             needsResume = true;
