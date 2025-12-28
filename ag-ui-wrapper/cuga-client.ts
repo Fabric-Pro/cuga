@@ -24,9 +24,11 @@ function buildHeaders(threadId?: string, credentials?: AICredentials): Record<st
   }
 
   // Add credential headers for multi-tenant support
+  // Note: X-AI-API-Key is used for internal communication with the Python CUGA backend
+  // The Python backend runs on localhost and requires the decrypted API key
   if (credentials) {
     if (credentials.apiKey) {
-      headers['X-AI-API-Key'] = credentials.apiKey;
+      headers['X-AI-API-Key'] = credentials.apiKey;  // Internal: Python backend needs raw key
     }
     if (credentials.provider) {
       headers['X-AI-Provider'] = credentials.provider;
