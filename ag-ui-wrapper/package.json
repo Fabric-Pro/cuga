@@ -15,6 +15,7 @@
     "@repo/agent-core": "workspace:*",
     "@repo/agent-runtime": "workspace:*",
     "@repo/agent-types": "workspace:*",
+    "@repo/ai-token": "workspace:*",
     "hono": "^4.7.10",
     "uuid": "^11.1.0"
   },
