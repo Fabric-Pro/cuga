@@ -1,11 +1,11 @@
 # syntax=docker/dockerfile:1
 
 # CUGA (Computer Use General Agent) Dockerfile for Container Deployment
-# Python-based agent with optional AG-UI TypeScript wrapper
+# Python-based agent with AG-UI TypeScript wrapper
 #
 # Ports:
-# - 8200: AG-UI wrapper (default external port)
-# - 8201: Python CUGA backend (internal)
+# - 7860: Python CUGA backend (this container)
+# - 9999: AG-UI wrapper (separate container, cuga-wrapper)
 
 FROM python:3.12-slim
 
@@ -53,17 +53,17 @@ COPY docs/examples/huggingface/email_template.md /app/cuga_workspace/email_templ
 # Environment variables
 ENV NODE_ENV=production
 ENV CUGA_HOST=0.0.0.0
-ENV PORT=8200
-ENV CUGA_BACKEND_PORT=8200
+ENV PORT=7860
+ENV DYNACONF_SERVER_PORTS__DEMO=7860
 
 # Expose port
-EXPOSE 8200
+EXPOSE 7860
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
-  CMD curl -f http://localhost:8200/health || exit 1
+# Health check - CUGA serves a React app at root, returns 200 when healthy
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD curl -f http://localhost:7860/ || exit 1
 
 # Start CUGA
-# Port is controlled via DYNACONF_SERVER_PORTS__DEMO environment variable (set in Aspire config)
+# Port is controlled via DYNACONF_SERVER_PORTS__DEMO environment variable
 CMD ["uv", "run", "cuga", "start", "demo", "--host", "0.0.0.0"]
 
