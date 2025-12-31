@@ -211,6 +211,95 @@ async def get_mcp_function_schema(request: FunctionCallRequest):
     pass
 
 
+# -- Management Endpoints --
+@app.post("/reload", tags=["Management"])
+async def reload_registry():
+    """
+    Reload all services from the configuration file.
+
+    This endpoint can be used to retry loading schemas that failed during startup
+    (e.g., due to DNS resolution failures or network issues).
+    """
+    global mcp_manager, registry
+    try:
+        config_file = get_config_filename()
+        logger.info(f"Reloading registry from configuration file: {config_file}")
+
+        # Load service configs
+        services = load_service_configs(config_file)
+
+        # Create new MCPManager with fresh config
+        new_mcp_manager = MCPManager(config=services)
+        new_registry = ApiRegistry(client=new_mcp_manager)
+        await new_registry.start_servers()
+
+        # Replace old instances
+        mcp_manager = new_mcp_manager
+        registry = new_registry
+
+        # Get stats
+        apps = await registry.show_applications()
+        app_names = [app["name"] for app in apps]
+        total_tools = 0
+        for app_name in app_names:
+            try:
+                apis = await registry.show_apis_for_app(app_name)
+                total_tools += len(apis)
+            except Exception:
+                pass
+
+        logger.info(f"Registry reloaded successfully: {len(apps)} apps, {total_tools} tools")
+        return {
+            "status": "success",
+            "message": f"Registry reloaded successfully",
+            "apps": app_names,
+            "total_tools": total_tools,
+        }
+    except Exception as e:
+        logger.error(f"Failed to reload registry: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to reload registry: {str(e)}")
+
+
+@app.get("/health", tags=["Management"])
+async def health_check():
+    """
+    Health check endpoint for the registry server.
+    Returns the status of the registry and loaded applications.
+    """
+    global registry
+    try:
+        apps = await registry.show_applications()
+        app_names = [app["name"] for app in apps]
+        total_tools = 0
+        apps_with_tools = []
+        apps_without_tools = []
+
+        for app_name in app_names:
+            try:
+                apis = await registry.show_apis_for_app(app_name)
+                tool_count = len(apis)
+                total_tools += tool_count
+                if tool_count > 0:
+                    apps_with_tools.append({"name": app_name, "tools": tool_count})
+                else:
+                    apps_without_tools.append(app_name)
+            except Exception as e:
+                apps_without_tools.append(app_name)
+
+        status = "healthy" if len(apps_without_tools) == 0 else "degraded"
+        return {
+            "status": status,
+            "apps_loaded": len(apps_with_tools),
+            "apps_failed": len(apps_without_tools),
+            "total_tools": total_tools,
+            "apps": apps_with_tools,
+            "failed_apps": apps_without_tools,
+        }
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        return {"status": "unhealthy", "error": str(e)}
+
+
 # -- Root Endpoint --
 @app.get("/", include_in_schema=False)
 async def root():

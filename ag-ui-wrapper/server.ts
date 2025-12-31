@@ -41,8 +41,8 @@ import {
   createUnifiedServer,
   type AgentSkill,
   type LangGraphStreamEvent,
+  type AgentRuntimeConfig,
 } from '@repo/agent-core';
-import { getRuntimeClient } from '@repo/agent-runtime';
 import { v4 as uuidv4 } from 'uuid';
 
 import { checkHealth, resumeExecution, stopExecution, streamQuery } from './cuga-client.js';
@@ -61,71 +61,50 @@ const PORT = Number.parseInt(process.env.PORT || '9999', 10);
 const HOST = process.env.HOST || '0.0.0.0';
 const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
 
-// Initialize Runtime Client for credential resolution
-// Uses RUNTIME_API_URL environment variable (set by Aspire)
-const runtimeClient = getRuntimeClient();
-
 /**
- * Resolve AI credentials from Runtime API based on API key
+ * Extract AI credentials from the unified server's runtime config
  *
- * The wrapper receives requests with tenant API keys and resolves
- * them to the actual AI provider credentials.
+ * The unified server handles token exchange and passes credentials via config.configurable.
+ * This function extracts those credentials for passing to the CUGA Python backend.
+ *
+ * Flow:
+ * 1. Frontend sends X-AI-Token header to CUGA wrapper
+ * 2. Unified server exchanges token for credentials via /api/ai/keys/exchange
+ * 3. Credentials are passed to executor via config.configurable
+ * 4. This function extracts them for the Python backend
  */
-async function resolveCredentials(apiKey?: string): Promise<AICredentials | undefined> {
+function extractCredentialsFromConfig(config?: AgentRuntimeConfig): AICredentials | undefined {
+  if (!config?.configurable) {
+    console.log('[CUGA-Wrapper] No config.configurable provided');
+    return undefined;
+  }
+
+  const configurable = config.configurable;
+  const apiKey = configurable.ai_api_key as string | undefined;
+
   if (!apiKey) {
-    console.log('[CUGA-Wrapper] No API key provided, using default credentials from environment');
+    console.log('[CUGA-Wrapper] No ai_api_key in config.configurable, using environment defaults');
     return undefined;
   }
 
-  try {
-    console.log('[CUGA-Wrapper] Resolving credentials from Runtime API...');
+  const credentials: AICredentials = {
+    apiKey,
+    provider: configurable.ai_provider as string | undefined,
+    model: configurable.ai_model as string | undefined,
+    baseUrl: configurable.ai_gateway_url as string | undefined,
+    userId: configurable.tenant_user_id as string | undefined,
+    organizationId: configurable.tenant_organization_id as string | undefined,
+  };
 
-    // Resolve model configuration using the tenant's API key
-    const modelConfig = await runtimeClient.resolveModel({
-      apiKey,
-      taskType: 'COMPLEX', // CUGA handles complex tasks
-    });
+  console.log('[CUGA-Wrapper] Extracted credentials from config:', {
+    provider: credentials.provider,
+    model: credentials.model,
+    hasBaseUrl: !!credentials.baseUrl,
+    userId: credentials.userId,
+    organizationId: credentials.organizationId,
+  });
 
-    if (!modelConfig) {
-      console.warn('[CUGA-Wrapper] No model config returned, using default credentials');
-      return undefined;
-    }
-
-    console.log('[CUGA-Wrapper] Resolved credentials:', {
-      provider: modelConfig.provider,
-      model: modelConfig.modelString,
-      source: modelConfig.source,
-    });
-
-    // Also resolve tenant context for logging
-    const tenantContext = await runtimeClient.resolveTenant({ apiKey });
-
-    return {
-      apiKey: modelConfig.apiKey,
-      provider: modelConfig.provider,
-      model: modelConfig.modelString,
-      baseUrl: undefined, // Use default for now
-      userId: tenantContext?.userId ?? undefined,
-      organizationId: tenantContext?.organizationId ?? undefined,
-    };
-  } catch (error) {
-    console.error('[CUGA-Wrapper] Failed to resolve credentials:', error);
-    return undefined;
-  }
-}
-
-/**
- * Extract API key from input metadata
- */
-function extractApiKey(input: { metadata?: Record<string, unknown> }): string | undefined {
-  // Try different locations where API key might be passed
-  const metadata = input.metadata || {};
-  return (
-    (metadata.apiKey as string) ||
-    (metadata.api_key as string) ||
-    (metadata.fabricApiKey as string) ||
-    (metadata.authorization as string)?.replace('Bearer ', '')
-  );
+  return credentials;
 }
 
 // Define agent skills for A2A discovery
@@ -485,14 +464,21 @@ const { app, start } = createUnifiedServer(
     maxAutonomyLevel: 'task', // Can handle complete tasks autonomously
   },
   // Invoke function - non-streaming execution
-  async (input: { messages?: Array<{ role: string; content: string }>; threadId?: string; contextId?: string; metadata?: Record<string, unknown> }) => {
+  async (input: { messages?: Array<{ role: string; content: string }>; threadId?: string; contextId?: string; metadata?: Record<string, unknown> }, config?: AgentRuntimeConfig) => {
     const { query, threadId, history } = extractUserMessage(input);
+
+    // Extract credentials from unified server's token exchange (via config.configurable)
+    const credentials = extractCredentialsFromConfig(config);
 
     console.log('[CUGA-Wrapper] Invoking CUGA (sync) with:', {
       queryLength: query.length,
       threadId,
       historyLength: history.length,
       inputKeys: Object.keys(input),
+      hasConfig: !!config,
+      hasCredentials: !!credentials,
+      aiModel: credentials?.model,
+      aiProvider: credentials?.provider,
     });
 
     if (!query) {
@@ -507,10 +493,6 @@ const { app, start } = createUnifiedServer(
         browserState: undefined,
       };
     }
-
-    // Resolve credentials from Runtime API (multi-tenant support)
-    const apiKey = extractApiKey(input);
-    const credentials = await resolveCredentials(apiKey);
 
     let finalAnswer = '';
     let variables = {};
@@ -684,8 +666,11 @@ const { app, start } = createUnifiedServer(
     };
   },
   // A2A streaming executor with auto-resume support for interrupts
-  async function* (input: { messages?: Array<{ role: string; content: string }>; threadId?: string; contextId?: string; metadata?: Record<string, unknown> }) {
+  async function* (input: { messages?: Array<{ role: string; content: string }>; threadId?: string; contextId?: string; metadata?: Record<string, unknown> }, config?: AgentRuntimeConfig) {
     const { query, threadId, history } = extractUserMessage(input);
+
+    // Extract credentials from unified server's token exchange (via config.configurable)
+    const credentials = extractCredentialsFromConfig(config);
 
     // Check if auto_approve is enabled (default true for autonomous execution)
     const autoApprove = input.metadata?.auto_approve !== false;
@@ -697,16 +682,16 @@ const { app, start } = createUnifiedServer(
       threadId,
       historyLength: history.length,
       autoApprove,
+      hasConfig: !!config,
+      hasCredentials: !!credentials,
+      aiModel: credentials?.model,
+      aiProvider: credentials?.provider,
     });
 
     if (!query) {
       yield { type: 'text' as const, text: 'No query provided' };
       return;
     }
-
-    // Resolve credentials from Runtime API (multi-tenant support)
-    const apiKey = extractApiKey(input);
-    const credentials = await resolveCredentials(apiKey);
 
     let currentState: CugaAgentState = {
       currentNode: 'ChatAgent',
@@ -784,8 +769,11 @@ const { app, start } = createUnifiedServer(
     }
   },
   // Platform streaming executor for CopilotKit LangGraphAgent with auto-resume support
-  async function* (input: { messages?: Array<{ role: string; content: string }>; threadId?: string; contextId?: string; metadata?: Record<string, unknown> }): AsyncGenerator<LangGraphStreamEvent> {
+  async function* (input: { messages?: Array<{ role: string; content: string }>; threadId?: string; contextId?: string; metadata?: Record<string, unknown> }, config?: AgentRuntimeConfig): AsyncGenerator<LangGraphStreamEvent> {
     const { query, threadId, history } = extractUserMessage(input);
+
+    // Extract credentials from unified server's token exchange (via config.configurable)
+    const credentials = extractCredentialsFromConfig(config);
 
     // Check if auto_approve is enabled (default true for autonomous execution)
     const autoApprove = input.metadata?.auto_approve !== false;
@@ -797,6 +785,12 @@ const { app, start } = createUnifiedServer(
       threadId,
       historyLength: history.length,
       autoApprove,
+      hasConfig: !!config,
+      hasConfigurable: !!config?.configurable,
+      configurableKeys: config?.configurable ? Object.keys(config.configurable) : [],
+      hasCredentials: !!credentials,
+      aiModel: credentials?.model,
+      aiProvider: credentials?.provider,
     });
 
     if (!query) {
@@ -807,10 +801,6 @@ const { app, start } = createUnifiedServer(
       };
       return;
     }
-
-    // Resolve credentials from Runtime API (multi-tenant support)
-    const apiKey = extractApiKey(input);
-    const credentials = await resolveCredentials(apiKey);
 
     // Initialize state
     let state: CugaAgentState = {

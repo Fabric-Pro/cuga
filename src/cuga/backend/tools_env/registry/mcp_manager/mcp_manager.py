@@ -912,41 +912,86 @@ class MCPManager:
             self.schemas[name] = schemas
 
     async def initialize_servers(self, services: List[Service]):
+        """Initialize servers with retry logic for transient failures.
+
+        For each service, attempts to fetch and parse the schema with up to 3 retries
+        for network-related errors (DNS failures, connection errors, etc.).
+        """
+        max_retries = 3
+        retry_delay = 2  # seconds
+
         for name, config in services:
-            try:
-                schema_data, parser, is_url = await self._fetch_and_parse_schema(config.url)
-                if not is_url:
-                    # this is a path
-                    config.url = schema_data['servers'][0]['url']
+            last_error = None
+            for attempt in range(max_retries):
+                try:
+                    schema_data, parser, is_url = await self._fetch_and_parse_schema(config.url)
+                    if not is_url:
+                        # this is a path
+                        config.url = schema_data['servers'][0]['url']
 
-                # Apply filtering and overrides
-                modified_schema = self._filter_and_override_schema(schema_data, config)
+                    # Apply filtering and overrides
+                    modified_schema = self._filter_and_override_schema(schema_data, config)
 
-                self.schemas[name] = modified_schema
-                self.auth_config[name] = config.auth
-                base_url = self._extract_base_url(config.url)
+                    self.schemas[name] = modified_schema
+                    self.auth_config[name] = config.auth
+                    base_url = self._extract_base_url(config.url)
 
-                # Create parser from modified schema
-                has_body_overrides = any(
-                    override.drop_request_body_parameters for override in (config.api_overrides or [])
-                )
-                has_query_overrides = any(
-                    override.drop_query_parameters for override in (config.api_overrides or [])
-                )
-
-                if config.include or config.api_overrides or has_body_overrides or has_query_overrides:
-                    # Re-create parser with modified schema
-                    schema_json = (
-                        yaml.dump(modified_schema)
-                        if isinstance(modified_schema, dict)
-                        else str(modified_schema)
+                    # Create parser from modified schema
+                    has_body_overrides = any(
+                        override.drop_request_body_parameters for override in (config.api_overrides or [])
                     )
-                    parser = SimpleOpenAPIParser.from_yaml(schema_json)
-                mcp_server = self._create_mcp_server(base_url, parser, name)
-                self.servers[name] = mcp_server
-                await self._register_tools(mcp_server)
-            except Exception as e:
-                print(f"Failed to initialize server for {config.url}: {e}")
+                    has_query_overrides = any(
+                        override.drop_query_parameters for override in (config.api_overrides or [])
+                    )
+
+                    if config.include or config.api_overrides or has_body_overrides or has_query_overrides:
+                        # Re-create parser with modified schema
+                        schema_json = (
+                            yaml.dump(modified_schema)
+                            if isinstance(modified_schema, dict)
+                            else str(modified_schema)
+                        )
+                        parser = SimpleOpenAPIParser.from_yaml(schema_json)
+                    mcp_server = self._create_mcp_server(base_url, parser, name)
+                    self.servers[name] = mcp_server
+                    await self._register_tools(mcp_server)
+                    logger.info(f"Successfully initialized server '{name}' from {config.url}")
+                    break  # Success, move to next service
+                except (
+                    OSError,
+                    httpx.ConnectError,
+                    httpx.TimeoutException,
+                    aiohttp.ClientError,
+                ) as e:
+                    # Network-related errors - retry
+                    last_error = e
+                    if attempt < max_retries - 1:
+                        logger.warning(
+                            f"Attempt {attempt + 1}/{max_retries} failed to initialize server '{name}' "
+                            f"from {config.url}: {e}. Retrying in {retry_delay}s..."
+                        )
+                        await asyncio.sleep(retry_delay)
+                    else:
+                        logger.error(
+                            f"Failed to initialize server '{name}' from {config.url} after "
+                            f"{max_retries} attempts: {e}"
+                        )
+                        # Remove from schema_urls to prevent returning apps with no tools
+                        if name in self.schema_urls:
+                            logger.warning(
+                                f"Removing '{name}' from available apps due to initialization failure"
+                            )
+                            del self.schema_urls[name]
+                except Exception as e:
+                    # Non-retryable errors
+                    logger.error(f"Failed to initialize server '{name}' from {config.url}: {e}")
+                    # Remove from schema_urls to prevent returning apps with no tools
+                    if name in self.schema_urls:
+                        logger.warning(
+                            f"Removing '{name}' from available apps due to initialization failure"
+                        )
+                        del self.schema_urls[name]
+                    break  # Don't retry non-network errors
 
     async def _register_tools(self, mcp_server):
         response = await mcp_server.list_tools()
