@@ -62,49 +62,77 @@ const HOST = process.env.HOST || '0.0.0.0';
 const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
 
 /**
- * Extract AI credentials from the unified server's runtime config
+ * Extract AI credentials from the unified server's runtime config or input
  *
- * The unified server handles token exchange and passes credentials via config.configurable.
- * This function extracts those credentials for passing to the CUGA Python backend.
+ * The unified server handles token exchange and passes credentials via:
+ * - config.configurable (for AG-UI/LangGraph path)
+ * - input fields directly (for A2A path - credentials are spread into body)
  *
  * Flow:
  * 1. Frontend sends X-AI-Token header to CUGA wrapper
  * 2. Unified server exchanges token for credentials via /api/ai/keys/exchange
- * 3. Credentials are passed to executor via config.configurable
+ * 3. Credentials are passed to executor via config.configurable OR input fields
  * 4. This function extracts them for the Python backend
  */
-function extractCredentialsFromConfig(config?: AgentRuntimeConfig): AICredentials | undefined {
-  if (!config?.configurable) {
-    console.log('[CUGA-Wrapper] No config.configurable provided');
-    return undefined;
+function extractCredentialsFromConfig(
+  config?: AgentRuntimeConfig,
+  input?: Record<string, unknown>
+): AICredentials | undefined {
+  // First try config.configurable (AG-UI/LangGraph path)
+  if (config?.configurable) {
+    const configurable = config.configurable;
+    const apiKey = configurable.ai_api_key as string | undefined;
+
+    if (apiKey) {
+      const credentials: AICredentials = {
+        apiKey,
+        provider: configurable.ai_provider as string | undefined,
+        model: configurable.ai_model as string | undefined,
+        baseUrl: configurable.ai_gateway_url as string | undefined,
+        userId: configurable.tenant_user_id as string | undefined,
+        organizationId: configurable.tenant_organization_id as string | undefined,
+      };
+
+      console.log('[CUGA-Wrapper] Extracted credentials from config.configurable:', {
+        provider: credentials.provider,
+        model: credentials.model,
+        hasBaseUrl: !!credentials.baseUrl,
+        userId: credentials.userId,
+        organizationId: credentials.organizationId,
+      });
+
+      return credentials;
+    }
   }
 
-  const configurable = config.configurable;
-  const apiKey = configurable.ai_api_key as string | undefined;
+  // Then try input fields directly (A2A path - credentials spread into body)
+  if (input) {
+    const apiKey = input.ai_api_key as string | undefined;
 
-  if (!apiKey) {
-    console.log('[CUGA-Wrapper] No ai_api_key in config.configurable, using environment defaults');
-    return undefined;
+    if (apiKey) {
+      const credentials: AICredentials = {
+        apiKey,
+        provider: input.ai_provider as string | undefined,
+        model: input.ai_model as string | undefined,
+        baseUrl: input.ai_base_url as string | undefined,
+        userId: input.tenant_user_id as string | undefined,
+        organizationId: input.tenant_organization_id as string | undefined,
+      };
+
+      console.log('[CUGA-Wrapper] Extracted credentials from input (A2A path):', {
+        provider: credentials.provider,
+        model: credentials.model,
+        hasBaseUrl: !!credentials.baseUrl,
+        userId: credentials.userId,
+        organizationId: credentials.organizationId,
+      });
+
+      return credentials;
+    }
   }
 
-  const credentials: AICredentials = {
-    apiKey,
-    provider: configurable.ai_provider as string | undefined,
-    model: configurable.ai_model as string | undefined,
-    baseUrl: configurable.ai_gateway_url as string | undefined,
-    userId: configurable.tenant_user_id as string | undefined,
-    organizationId: configurable.tenant_organization_id as string | undefined,
-  };
-
-  console.log('[CUGA-Wrapper] Extracted credentials from config:', {
-    provider: credentials.provider,
-    model: credentials.model,
-    hasBaseUrl: !!credentials.baseUrl,
-    userId: credentials.userId,
-    organizationId: credentials.organizationId,
-  });
-
-  return credentials;
+  console.log('[CUGA-Wrapper] No credentials found in config or input');
+  return undefined;
 }
 
 // Define agent skills for A2A discovery
@@ -467,8 +495,8 @@ const { app, start } = createUnifiedServer(
   async (input: { messages?: Array<{ role: string; content: string }>; threadId?: string; contextId?: string; metadata?: Record<string, unknown> }, config?: AgentRuntimeConfig) => {
     const { query, threadId, history } = extractUserMessage(input);
 
-    // Extract credentials from unified server's token exchange (via config.configurable)
-    const credentials = extractCredentialsFromConfig(config);
+    // Extract credentials from unified server's token exchange (via config.configurable or input)
+    const credentials = extractCredentialsFromConfig(config, input as Record<string, unknown>);
 
     console.log('[CUGA-Wrapper] Invoking CUGA (sync) with:', {
       queryLength: query.length,
@@ -669,8 +697,8 @@ const { app, start } = createUnifiedServer(
   async function* (input: { messages?: Array<{ role: string; content: string }>; threadId?: string; contextId?: string; metadata?: Record<string, unknown> }, config?: AgentRuntimeConfig) {
     const { query, threadId, history } = extractUserMessage(input);
 
-    // Extract credentials from unified server's token exchange (via config.configurable)
-    const credentials = extractCredentialsFromConfig(config);
+    // Extract credentials from unified server's token exchange (via config.configurable or input)
+    const credentials = extractCredentialsFromConfig(config, input as Record<string, unknown>);
 
     // Check if auto_approve is enabled (default true for autonomous execution)
     const autoApprove = input.metadata?.auto_approve !== false;
@@ -772,8 +800,8 @@ const { app, start } = createUnifiedServer(
   async function* (input: { messages?: Array<{ role: string; content: string }>; threadId?: string; contextId?: string; metadata?: Record<string, unknown> }, config?: AgentRuntimeConfig): AsyncGenerator<LangGraphStreamEvent> {
     const { query, threadId, history } = extractUserMessage(input);
 
-    // Extract credentials from unified server's token exchange (via config.configurable)
-    const credentials = extractCredentialsFromConfig(config);
+    // Extract credentials from unified server's token exchange (via config.configurable or input)
+    const credentials = extractCredentialsFromConfig(config, input as Record<string, unknown>);
 
     // Check if auto_approve is enabled (default true for autonomous execution)
     const autoApprove = input.metadata?.auto_approve !== false;
