@@ -8,7 +8,6 @@ import SubAgentsConfig from "./SubAgentsConfig";
 import ModelConfig from "./ModelConfig";
 import PoliciesConfig from "./PoliciesConfig";
 import AgentHumanConfig from "./AgentHumanConfig";
-// import AgentBehaviorConfig from "./AgentBehaviorConfig"; // Temporarily hidden
 
 interface ConfigHeaderProps {
   onToggleLeftSidebar: () => void;
@@ -127,15 +126,6 @@ export function ConfigHeader({
               <UserCog size={16} />
               <span>Agent&nbsp;∙&nbsp;Human</span>
             </button>
-            {/* Temporarily hidden - Agent Behavior */}
-            {/* <button
-              className="config-header-btn"
-              onClick={() => setActiveModal("behavior")}
-              title="Configure agent behavior settings"
-            >
-              <Activity size={16} />
-              <span>Agent Behavior</span>
-            </button> */}
           </>
         )}
       </div>
@@ -161,10 +151,6 @@ export function ConfigHeader({
       {activeModal === "agenthuman" && (
         <AgentHumanConfig onClose={() => setActiveModal(null)} />
       )}
-      {/* Temporarily hidden - Agent Behavior */}
-      {/* {activeModal === "behavior" && (
-        <AgentBehaviorConfig onClose={() => setActiveModal(null)} />
-      )} */}
 
       {/* Mobile Menu */}
       {isMobile && isMobileMenuOpen && (
@@ -249,17 +235,6 @@ export function ConfigHeader({
                 <UserCog size={18} />
                 <span>Agent ⋅ Human</span>
               </button>
-              {/* Temporarily hidden - Agent Behavior */}
-              {/* <button
-                className="mobile-menu-item"
-                onClick={() => {
-                  setActiveModal("behavior");
-                  closeMobileMenu();
-                }}
-              >
-                <Activity size={18} />
-                <span>Agent Behavior</span>
-              </button> */}
             </div>
           </div>
         </div>
@@ -267,6 +242,3 @@ export function ConfigHeader({
     </div>
   );
 }
-
-
-
