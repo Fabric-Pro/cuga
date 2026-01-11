@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Folder, File, ChevronRight, ChevronDown, X, Download, FileText, RefreshCw, Trash2, Info } from "lucide-react";
+import { Folder, File, ChevronRight, ChevronDown, X, Download, FileText, RefreshCw, Info } from "lucide-react";
 import "./WorkspacePanel.css";
 
 interface FileNode {
@@ -21,8 +21,6 @@ export function WorkspacePanel({ isOpen, onToggle, highlightedFile }: WorkspaceP
   const [selectedFile, setSelectedFile] = useState<{ path: string; content: string; name: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [deleteConfirmation, setDeleteConfirmation] = useState<{ file: FileNode; isOpen: boolean } | null>(null);
-  const [isDragOver, setIsDragOver] = useState(false);
 
   const loadWorkspaceTree = useCallback(async () => {
     try {
@@ -113,117 +111,6 @@ export function WorkspacePanel({ isOpen, onToggle, highlightedFile }: WorkspaceP
     }
   };
 
-  const handleDeleteClick = (file: FileNode) => {
-    // Disabled: Delete functionality is not available
-    // setDeleteConfirmation({ file, isOpen: true });
-  };
-
-  const handleDeleteConfirm = async () => {
-    if (!deleteConfirmation) return;
-
-    const { file } = deleteConfirmation;
-    setLoading(true);
-
-    try {
-      const response = await fetch(`/api/workspace/file?path=${encodeURIComponent(file.path)}`, {
-        method: 'DELETE'
-      });
-
-      if (response.ok) {
-        // Refresh the workspace tree after successful deletion
-        await loadWorkspaceTree();
-        // Close any open file viewer if the deleted file was being viewed
-        if (selectedFile && selectedFile.path === file.path) {
-          setSelectedFile(null);
-        }
-      } else {
-        alert("Failed to delete file");
-      }
-    } catch (err) {
-      console.error("Error deleting file:", err);
-      alert("Error deleting file");
-    } finally {
-      setLoading(false);
-      setDeleteConfirmation(null);
-    }
-  };
-
-  const handleDeleteCancel = () => {
-    setDeleteConfirmation(null);
-  };
-
-  // Drag and drop handlers - DISABLED
-  const handleDragEnter = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    // Disabled: Upload functionality is not available
-    // if (e.dataTransfer?.types.includes('Files')) {
-    //   setIsDragOver(true);
-    // }
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    // Disabled: Upload functionality is not available
-    // const rect = e.currentTarget.getBoundingClientRect();
-    // const x = e.clientX;
-    // const y = e.clientY;
-    // if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
-    //   setIsDragOver(false);
-    // }
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
-  const handleDrop = async (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    // Disabled: Upload functionality is not available
-    // setIsDragOver(false);
-    // const files = Array.from(e.dataTransfer.files);
-    // if (files.length > 0) {
-    //   await handleFileUpload(files);
-    // }
-  };
-
-  const handleFileUpload = async (files: File[]) => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const uploadPromises = files.map(async (file) => {
-        const formData = new FormData();
-        formData.append('file', file);
-
-        // Upload to cuga_workspace directory
-        const response = await fetch('/api/workspace/upload', {
-          method: 'POST',
-          body: formData,
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to upload ${file.name}: ${response.statusText}`);
-        }
-
-        return await response.json();
-      });
-
-      await Promise.all(uploadPromises);
-
-      // Refresh the workspace tree after successful uploads
-      await loadWorkspaceTree();
-    } catch (err) {
-      console.error('Error uploading files:', err);
-      setError(`Upload failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const renderFileTree = (nodes: FileNode[], level: number = 0) => {
     return nodes.map((node) => (
       <div key={node.path} style={{ marginLeft: `${level * 16}px` }}>
@@ -259,17 +146,6 @@ export function WorkspacePanel({ isOpen, onToggle, highlightedFile }: WorkspaceP
               >
                 <Download size={14} />
               </button>
-              {/* Delete button disabled */}
-              {/* <button
-                className="delete-icon-btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDeleteClick(node);
-                }}
-                title="Delete file"
-              >
-                <Trash2 size={14} />
-              </button> */}
             </div>
           )}
         </div>
@@ -284,13 +160,7 @@ export function WorkspacePanel({ isOpen, onToggle, highlightedFile }: WorkspaceP
 
   return (
     <>
-      <div
-        className={`workspace-panel ${isOpen ? "open" : "closed"} ${isDragOver ? "drag-over" : ""}`}
-        onDragEnter={handleDragEnter}
-        onDragLeave={handleDragLeave}
-        onDragOver={handleDragOver}
-        onDrop={handleDrop}
-      >
+      <div className={`workspace-panel ${isOpen ? "open" : "closed"}`}>
         <div className="workspace-panel-header">
           <div className="workspace-panel-title">
             <Folder size={18} />
@@ -390,50 +260,6 @@ export function WorkspacePanel({ isOpen, onToggle, highlightedFile }: WorkspaceP
           <div className="workspace-spinner" />
         </div>
       )}
-
-      {/* Drag overlay disabled */}
-      {/* {isDragOver && (
-        <div className="workspace-drag-overlay">
-          <div className="workspace-drag-content">
-            <div className="workspace-drag-icon">📁</div>
-            <div className="workspace-drag-text">Drop files here to upload</div>
-          </div>
-        </div>
-      )} */}
-
-      {/* Delete confirmation modal disabled */}
-      {/* {deleteConfirmation?.isOpen && (
-        <div className="delete-confirmation-overlay" onClick={handleDeleteCancel}>
-          <div className="delete-confirmation-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="delete-confirmation-header">
-              <Trash2 size={24} className="delete-icon" />
-              <h3>Delete File</h3>
-            </div>
-            <div className="delete-confirmation-content">
-              <p>Are you sure you want to delete <strong>{deleteConfirmation.file.name}</strong>?</p>
-              <p className="delete-warning">This action cannot be undone.</p>
-            </div>
-            <div className="delete-confirmation-actions">
-              <button
-                className="delete-cancel-btn"
-                onClick={handleDeleteCancel}
-                disabled={loading}
-              >
-                Cancel
-              </button>
-              <button
-                className="delete-confirm-btn"
-                onClick={handleDeleteConfirm}
-                disabled={loading}
-              >
-                {loading ? "Deleting..." : "Delete"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )} */}
     </>
   );
 }
-
-

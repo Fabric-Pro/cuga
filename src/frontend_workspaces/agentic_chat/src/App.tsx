@@ -10,7 +10,6 @@ import { FileAutocomplete } from "./FileAutocomplete";
 import { GuidedTour, TourStep } from "./GuidedTour";
 import { useTour } from "./useTour";
 import { AdvancedTourButton } from "./AdvancedTourButton";
-import { HelpCircle } from "lucide-react";
 import "./AppLayout.css";
 import "./mockApi";
 import "./workspaceThrottle"; // Enforce 3-second minimum interval between workspace API calls
@@ -87,7 +86,7 @@ export function App() {
     }
   }, [hasStartedChat]);
   
-  const { isTourActive, hasSeenTour, startTour, completeTour, skipTour, resetTour } = useTour();
+  const { isTourActive, completeTour, skipTour } = useTour();
 
   // Handle variables updates from CustomChat
   const handleVariablesUpdate = useCallback((variables: Record<string, any>, history: Array<any>) => {
@@ -181,17 +180,6 @@ export function App() {
     },
   ];
 
-  // Disabled: Tour no longer starts automatically on welcome screen
-  // Start tour automatically for first-time users after a delay
-  // useEffect(() => {
-  //   if (!hasSeenTour && !hasStartedChat) {
-  //     const timer = setTimeout(() => {
-  //       startTour();
-  //     }, 1000);
-  //     return () => clearTimeout(timer);
-  //   }
-  // }, [hasSeenTour, hasStartedChat, startTour]);
-
   return (
     <ErrorBoundary>
       <div className={`app-layout ${!hasStartedChat ? 'welcome-mode' : ''}`}>
@@ -242,17 +230,6 @@ export function App() {
           onFileHover={setHighlightedFile}
           disabled={false}
         />
-        
-        {/* Tour help button - welcome screen - DISABLED */}
-        {/* {!hasStartedChat && hasSeenTour && (
-          <button
-            className="tour-help-button"
-            onClick={resetTour}
-            title="Restart Tour"
-          >
-            <HelpCircle size={20} />
-          </button>
-        )} */}
         
         {/* Advanced tour button - after chat started */}
         {hasStartedChat && <AdvancedTourButton />}
