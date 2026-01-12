@@ -20,6 +20,9 @@ export default defineConfig({
 		// Small utility packages that should be bundled
 		"uuid",
 		"zod",
+		// Hono web framework - bundle to avoid node_modules dependency
+		"hono",
+		"@hono/node-server",
 	],
 	// Keep these packages external - they're installed in node_modules or not used by agents
 	external: [
