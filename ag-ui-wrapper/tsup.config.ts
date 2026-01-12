@@ -17,6 +17,9 @@ export default defineConfig({
 		/^@repo\/ai-token$/,
 		/^@repo\/utils$/,
 		/^@repo\/logs$/,
+		// Small utility packages that should be bundled
+		"uuid",
+		"zod",
 	],
 	// Keep these packages external - they're installed in node_modules or not used by agents
 	external: [
