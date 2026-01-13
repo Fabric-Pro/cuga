@@ -1,1 +1,1 @@
-declare module '@agentic_chat';
+declare module "@agentic_chat";

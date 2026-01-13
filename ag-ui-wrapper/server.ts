@@ -38,27 +38,32 @@
  */
 
 import {
-  createUnifiedServer,
-  type AgentSkill,
-  type LangGraphStreamEvent,
-  type AgentRuntimeConfig,
-} from '@repo/agent-core';
-import { v4 as uuidv4 } from 'uuid';
+	createUnifiedServer,
+	type AgentSkill,
+	type LangGraphStreamEvent,
+	type AgentRuntimeConfig,
+} from "@repo/agent-core";
+import { v4 as uuidv4 } from "uuid";
 
-import { checkHealth, resumeExecution, stopExecution, streamQuery } from './cuga-client.js';
+import {
+	checkHealth,
+	resumeExecution,
+	stopExecution,
+	streamQuery,
+} from "./cuga-client.js";
 import type {
-  AICredentials,
-  CugaAgentState,
-  CugaBrowserScreenshot,
-  CugaCodeExecutionEvent,
-  CugaFinalAnswer,
-  CugaSSEEvent,
-  CugaSubtask,
-} from './types.js';
+	AICredentials,
+	CugaAgentState,
+	CugaBrowserScreenshot,
+	CugaCodeExecutionEvent,
+	CugaFinalAnswer,
+	CugaSSEEvent,
+	CugaSubtask,
+} from "./types.js";
 
 // Configuration
-const PORT = Number.parseInt(process.env.PORT || '9999', 10);
-const HOST = process.env.HOST || '0.0.0.0';
+const PORT = Number.parseInt(process.env.PORT || "9999", 10);
+const HOST = process.env.HOST || "0.0.0.0";
 const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
 
 /**
@@ -75,363 +80,413 @@ const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
  * 4. This function extracts them for the Python backend
  */
 function extractCredentialsFromConfig(
-  config?: AgentRuntimeConfig,
-  input?: Record<string, unknown>
+	config?: AgentRuntimeConfig,
+	input?: Record<string, unknown>,
 ): AICredentials | undefined {
-  // First try config.configurable (AG-UI/LangGraph path)
-  if (config?.configurable) {
-    const configurable = config.configurable;
-    const apiKey = configurable.ai_api_key as string | undefined;
+	// First try config.configurable (AG-UI/LangGraph path)
+	if (config?.configurable) {
+		const configurable = config.configurable;
+		const apiKey = configurable.ai_api_key as string | undefined;
 
-    if (apiKey) {
-      const credentials: AICredentials = {
-        apiKey,
-        provider: configurable.ai_provider as string | undefined,
-        model: configurable.ai_model as string | undefined,
-        baseUrl: configurable.ai_gateway_url as string | undefined,
-        userId: configurable.tenant_user_id as string | undefined,
-        organizationId: configurable.tenant_organization_id as string | undefined,
-      };
+		if (apiKey) {
+			const credentials: AICredentials = {
+				apiKey,
+				provider: configurable.ai_provider as string | undefined,
+				model: configurable.ai_model as string | undefined,
+				baseUrl: configurable.ai_gateway_url as string | undefined,
+				userId: configurable.tenant_user_id as string | undefined,
+				organizationId: configurable.tenant_organization_id as
+					| string
+					| undefined,
+			};
 
-      console.log('[CUGA-Wrapper] Extracted credentials from config.configurable:', {
-        provider: credentials.provider,
-        model: credentials.model,
-        hasBaseUrl: !!credentials.baseUrl,
-        userId: credentials.userId,
-        organizationId: credentials.organizationId,
-      });
+			console.log(
+				"[CUGA-Wrapper] Extracted credentials from config.configurable:",
+				{
+					provider: credentials.provider,
+					model: credentials.model,
+					hasBaseUrl: !!credentials.baseUrl,
+					userId: credentials.userId,
+					organizationId: credentials.organizationId,
+				},
+			);
 
-      return credentials;
-    }
-  }
+			return credentials;
+		}
+	}
 
-  // Then try input fields directly (A2A path - credentials spread into body)
-  if (input) {
-    const apiKey = input.ai_api_key as string | undefined;
+	// Then try input fields directly (A2A path - credentials spread into body)
+	if (input) {
+		const apiKey = input.ai_api_key as string | undefined;
 
-    if (apiKey) {
-      const credentials: AICredentials = {
-        apiKey,
-        provider: input.ai_provider as string | undefined,
-        model: input.ai_model as string | undefined,
-        baseUrl: input.ai_base_url as string | undefined,
-        userId: input.tenant_user_id as string | undefined,
-        organizationId: input.tenant_organization_id as string | undefined,
-      };
+		if (apiKey) {
+			const credentials: AICredentials = {
+				apiKey,
+				provider: input.ai_provider as string | undefined,
+				model: input.ai_model as string | undefined,
+				baseUrl: input.ai_base_url as string | undefined,
+				userId: input.tenant_user_id as string | undefined,
+				organizationId: input.tenant_organization_id as
+					| string
+					| undefined,
+			};
 
-      console.log('[CUGA-Wrapper] Extracted credentials from input (A2A path):', {
-        provider: credentials.provider,
-        model: credentials.model,
-        hasBaseUrl: !!credentials.baseUrl,
-        userId: credentials.userId,
-        organizationId: credentials.organizationId,
-      });
+			console.log(
+				"[CUGA-Wrapper] Extracted credentials from input (A2A path):",
+				{
+					provider: credentials.provider,
+					model: credentials.model,
+					hasBaseUrl: !!credentials.baseUrl,
+					userId: credentials.userId,
+					organizationId: credentials.organizationId,
+				},
+			);
 
-      return credentials;
-    }
-  }
+			return credentials;
+		}
+	}
 
-  console.log('[CUGA-Wrapper] No credentials found in config or input');
-  return undefined;
+	console.log("[CUGA-Wrapper] No credentials found in config or input");
+	return undefined;
 }
 
 // Define agent skills for A2A discovery
 const AGENT_SKILLS: AgentSkill[] = [
-  {
-    id: 'browser-automation',
-    name: 'Browser Automation',
-    description: 'Automate web browser interactions with full Playwright support',
-    parameters: {
-      type: 'object',
-      properties: {
-        task: { type: 'string', description: 'Task to perform in the browser' },
-        url: { type: 'string', description: 'Starting URL (optional)' },
-      },
-      required: ['task'],
-    },
-    examples: [
-      'Navigate to GitHub and star a repository',
-      'Fill out a form on a website',
-      'Extract data from a web page',
-    ],
-    tags: ['browser', 'automation', 'web'],
-  },
-  {
-    id: 'api-orchestration',
-    name: 'API Orchestration',
-    description: 'Execute complex multi-API workflows with variable management',
-    parameters: {
-      type: 'object',
-      properties: {
-        task: { type: 'string', description: 'API task to perform' },
-        apis: { type: 'array', items: { type: 'string' }, description: 'APIs to use' },
-      },
-      required: ['task'],
-    },
-    examples: [
-      'Fetch user data from API and create a report',
-      'Chain multiple API calls to complete a workflow',
-    ],
-    tags: ['api', 'orchestration', 'workflow'],
-  },
-  {
-    id: 'code-execution',
-    name: 'Code Execution',
-    description: 'Execute Python code with sandbox support (Docker/E2B)',
-    parameters: {
-      type: 'object',
-      properties: {
-        task: { type: 'string', description: 'Code task to perform' },
-        language: { type: 'string', enum: ['python'] },
-      },
-      required: ['task'],
-    },
-    examples: [
-      'Write and execute a Python script to process data',
-      'Generate code to solve a problem',
-    ],
-    tags: ['code', 'execution', 'python'],
-  },
-  {
-    id: 'task-decomposition',
-    name: 'Task Decomposition',
-    description: 'Break down complex tasks into subtasks and execute them',
-    examples: [
-      'Plan and execute a multi-step workflow',
-      'Decompose a complex request into manageable steps',
-    ],
-    tags: ['planning', 'decomposition', 'workflow'],
-  },
+	{
+		id: "browser-automation",
+		name: "Browser Automation",
+		description:
+			"Automate web browser interactions with full Playwright support",
+		parameters: {
+			type: "object",
+			properties: {
+				task: {
+					type: "string",
+					description: "Task to perform in the browser",
+				},
+				url: { type: "string", description: "Starting URL (optional)" },
+			},
+			required: ["task"],
+		},
+		examples: [
+			"Navigate to GitHub and star a repository",
+			"Fill out a form on a website",
+			"Extract data from a web page",
+		],
+		tags: ["browser", "automation", "web"],
+	},
+	{
+		id: "api-orchestration",
+		name: "API Orchestration",
+		description:
+			"Execute complex multi-API workflows with variable management",
+		parameters: {
+			type: "object",
+			properties: {
+				task: { type: "string", description: "API task to perform" },
+				apis: {
+					type: "array",
+					items: { type: "string" },
+					description: "APIs to use",
+				},
+			},
+			required: ["task"],
+		},
+		examples: [
+			"Fetch user data from API and create a report",
+			"Chain multiple API calls to complete a workflow",
+		],
+		tags: ["api", "orchestration", "workflow"],
+	},
+	{
+		id: "code-execution",
+		name: "Code Execution",
+		description: "Execute Python code with sandbox support (Docker/E2B)",
+		parameters: {
+			type: "object",
+			properties: {
+				task: { type: "string", description: "Code task to perform" },
+				language: { type: "string", enum: ["python"] },
+			},
+			required: ["task"],
+		},
+		examples: [
+			"Write and execute a Python script to process data",
+			"Generate code to solve a problem",
+		],
+		tags: ["code", "execution", "python"],
+	},
+	{
+		id: "task-decomposition",
+		name: "Task Decomposition",
+		description: "Break down complex tasks into subtasks and execute them",
+		examples: [
+			"Plan and execute a multi-step workflow",
+			"Decompose a complex request into manageable steps",
+		],
+		tags: ["planning", "decomposition", "workflow"],
+	},
 ];
 
 /**
  * Transform CUGA SSE event to AG-UI state update
  */
 function transformCugaEvent(
-  event: CugaSSEEvent,
-  currentState: CugaAgentState
+	event: CugaSSEEvent,
+	currentState: CugaAgentState,
 ): Partial<CugaAgentState> {
-  const updates: Partial<CugaAgentState> = {
-    currentNode: event.name,
-  };
+	const updates: Partial<CugaAgentState> = {
+		currentNode: event.name,
+	};
 
-  switch (event.name) {
-    case 'Answer': {
-      try {
-        const parsed = JSON.parse(event.data) as CugaFinalAnswer;
-        updates.finalAnswer = parsed.data;
-        updates.variables = parsed.variables;
-        updates.streamingContent = parsed.data;
-        updates.status = 'complete';
-      } catch {
-        updates.finalAnswer = event.data;
-        updates.streamingContent = event.data;
-        updates.status = 'complete';
-      }
-      break;
-    }
-    case 'tool_call': {
-      try {
-        updates.pendingToolCalls = JSON.parse(event.data);
-      } catch {
-        console.warn('Failed to parse tool_call data:', event.data);
-      }
-      break;
-    }
-    case '__interrupt__': {
-      updates.needsApproval = true;
-      updates.status = 'waiting_hitl';
-      try {
-        const hitlData = JSON.parse(event.data);
-        updates.hitlRequests = [
-          ...(currentState.hitlRequests || []),
-          {
-            id: `hitl_${Date.now()}`,
-            type: hitlData.type || 'approval',
-            message: hitlData.message || 'Human approval required',
-            context: hitlData.context,
-            pending: true,
-          },
-        ];
-      } catch {
-        updates.hitlRequests = [
-          ...(currentState.hitlRequests || []),
-          {
-            id: `hitl_${Date.now()}`,
-            type: 'approval',
-            message: event.data || 'Human approval required',
-            pending: true,
-          },
-        ];
-      }
-      break;
-    }
-    case 'Stopped': {
-      updates.error = 'Execution stopped by user';
-      updates.status = 'failed';
-      break;
-    }
-    case 'TaskAnalyzerAgent': {
-      updates.status = 'planning';
-      updates.thoughts = event.data;
-      break;
-    }
-    case 'TaskDecompositionAgent': {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.subtasks || data.task_decomposition) {
-          const subtasks = data.subtasks || data.task_decomposition?.subtasks || [];
-          updates.subtasks = subtasks.map((s: { id?: string; description?: string; task?: string; status?: string; app?: string; type?: string }, idx: number) => ({
-            id: s.id || `subtask_${idx}`,
-            description: s.description || s.task || '',
-            status: s.status || 'pending',
-            app: s.app,
-            type: s.type,
-          }));
-        }
-        updates.status = 'planning';
-      } catch {
-        updates.streamingContent = (currentState.streamingContent || '') + event.data;
-      }
-      break;
-    }
-    case 'PlanControllerAgent': {
-      updates.status = 'executing';
-      try {
-        const data = JSON.parse(event.data);
-        if (data.current_subtask_id) {
-          updates.currentSubtaskId = data.current_subtask_id;
-        }
-        // Update subtask status
-        if (data.subtask_status && currentState.subtasks) {
-          updates.subtasks = currentState.subtasks.map((s) =>
-            s.id === data.subtask_id ? { ...s, status: data.subtask_status } : s
-          );
-        }
-      } catch {
-        // Non-JSON data, just log
-      }
-      break;
-    }
-    case 'BrowserPlannerAgent':
-    case 'ActionAgent': {
-      updates.status = 'executing';
-      try {
-        const data = JSON.parse(event.data);
-        if (data.screenshot) {
-          updates.browserState = {
-            screenshot: data.screenshot,
-            url: data.url || currentState.browserState?.url || '',
-            elements: data.elements,
-            viewport: data.viewport,
-          };
-        }
-        if (data.action) {
-          updates.browserAction = {
-            type: data.action.type,
-            bid: data.action.bid,
-            value: data.action.value,
-            status: data.action.status || 'executing',
-          };
-        }
-      } catch {
-        updates.streamingContent = (currentState.streamingContent || '') + '\n' + event.data;
-      }
-      break;
-    }
-    case 'browser_screenshot': {
-      try {
-        const data = JSON.parse(event.data);
-        updates.browserState = {
-          screenshot: data.screenshot,
-          url: data.url || currentState.browserState?.url || '',
-          elements: data.elements,
-          viewport: data.viewport,
-        };
-      } catch {
-        console.warn('Failed to parse browser_screenshot data');
-      }
-      break;
-    }
-    case 'browser_action': {
-      try {
-        const data = JSON.parse(event.data);
-        updates.browserAction = {
-          type: data.type,
-          bid: data.bid,
-          value: data.value,
-          status: data.status || 'executing',
-          error: data.error,
-        };
-      } catch {
-        console.warn('Failed to parse browser_action data');
-      }
-      break;
-    }
-    case 'code_execution': {
-      try {
-        const data = JSON.parse(event.data);
-        const codeExec = {
-          id: data.id || `code_${Date.now()}`,
-          code: data.code,
-          language: data.language || 'python',
-          status: data.status || 'running',
-          output: data.output,
-          error: data.error,
-          executionTimeMs: data.execution_time_ms,
-          sandbox: data.sandbox,
-        };
-        updates.codeExecutions = [...(currentState.codeExecutions || []).filter(c => c.id !== codeExec.id), codeExec];
-      } catch {
-        console.warn('Failed to parse code_execution data');
-      }
-      break;
-    }
-    case 'variable_update': {
-      try {
-        const data = JSON.parse(event.data);
-        updates.variables = {
-          ...currentState.variables,
-          [data.name]: {
-            type: data.type,
-            value: data.value,
-            description: data.description,
-          },
-        };
-      } catch {
-        console.warn('Failed to parse variable_update data');
-      }
-      break;
-    }
-    case 'ApiAgent': {
-      updates.status = 'executing';
-      try {
-        const data = JSON.parse(event.data);
-        if (data.code) {
-          const codeExec = {
-            id: data.id || `api_code_${Date.now()}`,
-            code: data.code,
-            language: 'python' as const,
-            status: data.status || 'running',
-            output: data.output,
-            error: data.error,
-          };
-          updates.codeExecutions = [...(currentState.codeExecutions || []).filter(c => c.id !== codeExec.id), codeExec];
-        }
-      } catch {
-        updates.streamingContent = (currentState.streamingContent || '') + '\n' + event.data;
-      }
-      break;
-    }
-    default: {
-      // Append to streaming content for other events
-      if (event.data) {
-        updates.streamingContent = (currentState.streamingContent || '') + '\n' + event.data;
-      }
-    }
-  }
+	switch (event.name) {
+		case "Answer": {
+			try {
+				const parsed = JSON.parse(event.data) as CugaFinalAnswer;
+				updates.finalAnswer = parsed.data;
+				updates.variables = parsed.variables;
+				updates.streamingContent = parsed.data;
+				updates.status = "complete";
+			} catch {
+				updates.finalAnswer = event.data;
+				updates.streamingContent = event.data;
+				updates.status = "complete";
+			}
+			break;
+		}
+		case "tool_call": {
+			try {
+				updates.pendingToolCalls = JSON.parse(event.data);
+			} catch {
+				console.warn("Failed to parse tool_call data:", event.data);
+			}
+			break;
+		}
+		case "__interrupt__": {
+			updates.needsApproval = true;
+			updates.status = "waiting_hitl";
+			try {
+				const hitlData = JSON.parse(event.data);
+				updates.hitlRequests = [
+					...(currentState.hitlRequests || []),
+					{
+						id: `hitl_${Date.now()}`,
+						type: hitlData.type || "approval",
+						message: hitlData.message || "Human approval required",
+						context: hitlData.context,
+						pending: true,
+					},
+				];
+			} catch {
+				updates.hitlRequests = [
+					...(currentState.hitlRequests || []),
+					{
+						id: `hitl_${Date.now()}`,
+						type: "approval",
+						message: event.data || "Human approval required",
+						pending: true,
+					},
+				];
+			}
+			break;
+		}
+		case "Stopped": {
+			updates.error = "Execution stopped by user";
+			updates.status = "failed";
+			break;
+		}
+		case "TaskAnalyzerAgent": {
+			updates.status = "planning";
+			updates.thoughts = event.data;
+			break;
+		}
+		case "TaskDecompositionAgent": {
+			try {
+				const data = JSON.parse(event.data);
+				if (data.subtasks || data.task_decomposition) {
+					const subtasks =
+						data.subtasks ||
+						data.task_decomposition?.subtasks ||
+						[];
+					updates.subtasks = subtasks.map(
+						(
+							s: {
+								id?: string;
+								description?: string;
+								task?: string;
+								status?: string;
+								app?: string;
+								type?: string;
+							},
+							idx: number,
+						) => ({
+							id: s.id || `subtask_${idx}`,
+							description: s.description || s.task || "",
+							status: s.status || "pending",
+							app: s.app,
+							type: s.type,
+						}),
+					);
+				}
+				updates.status = "planning";
+			} catch {
+				updates.streamingContent =
+					(currentState.streamingContent || "") + event.data;
+			}
+			break;
+		}
+		case "PlanControllerAgent": {
+			updates.status = "executing";
+			try {
+				const data = JSON.parse(event.data);
+				if (data.current_subtask_id) {
+					updates.currentSubtaskId = data.current_subtask_id;
+				}
+				// Update subtask status
+				if (data.subtask_status && currentState.subtasks) {
+					updates.subtasks = currentState.subtasks.map((s) =>
+						s.id === data.subtask_id
+							? { ...s, status: data.subtask_status }
+							: s,
+					);
+				}
+			} catch {
+				// Non-JSON data, just log
+			}
+			break;
+		}
+		case "BrowserPlannerAgent":
+		case "ActionAgent": {
+			updates.status = "executing";
+			try {
+				const data = JSON.parse(event.data);
+				if (data.screenshot) {
+					updates.browserState = {
+						screenshot: data.screenshot,
+						url: data.url || currentState.browserState?.url || "",
+						elements: data.elements,
+						viewport: data.viewport,
+					};
+				}
+				if (data.action) {
+					updates.browserAction = {
+						type: data.action.type,
+						bid: data.action.bid,
+						value: data.action.value,
+						status: data.action.status || "executing",
+					};
+				}
+			} catch {
+				updates.streamingContent =
+					(currentState.streamingContent || "") + "\n" + event.data;
+			}
+			break;
+		}
+		case "browser_screenshot": {
+			try {
+				const data = JSON.parse(event.data);
+				updates.browserState = {
+					screenshot: data.screenshot,
+					url: data.url || currentState.browserState?.url || "",
+					elements: data.elements,
+					viewport: data.viewport,
+				};
+			} catch {
+				console.warn("Failed to parse browser_screenshot data");
+			}
+			break;
+		}
+		case "browser_action": {
+			try {
+				const data = JSON.parse(event.data);
+				updates.browserAction = {
+					type: data.type,
+					bid: data.bid,
+					value: data.value,
+					status: data.status || "executing",
+					error: data.error,
+				};
+			} catch {
+				console.warn("Failed to parse browser_action data");
+			}
+			break;
+		}
+		case "code_execution": {
+			try {
+				const data = JSON.parse(event.data);
+				const codeExec = {
+					id: data.id || `code_${Date.now()}`,
+					code: data.code,
+					language: data.language || "python",
+					status: data.status || "running",
+					output: data.output,
+					error: data.error,
+					executionTimeMs: data.execution_time_ms,
+					sandbox: data.sandbox,
+				};
+				updates.codeExecutions = [
+					...(currentState.codeExecutions || []).filter(
+						(c) => c.id !== codeExec.id,
+					),
+					codeExec,
+				];
+			} catch {
+				console.warn("Failed to parse code_execution data");
+			}
+			break;
+		}
+		case "variable_update": {
+			try {
+				const data = JSON.parse(event.data);
+				updates.variables = {
+					...currentState.variables,
+					[data.name]: {
+						type: data.type,
+						value: data.value,
+						description: data.description,
+					},
+				};
+			} catch {
+				console.warn("Failed to parse variable_update data");
+			}
+			break;
+		}
+		case "ApiAgent": {
+			updates.status = "executing";
+			try {
+				const data = JSON.parse(event.data);
+				if (data.code) {
+					const codeExec = {
+						id: data.id || `api_code_${Date.now()}`,
+						code: data.code,
+						language: "python" as const,
+						status: data.status || "running",
+						output: data.output,
+						error: data.error,
+					};
+					updates.codeExecutions = [
+						...(currentState.codeExecutions || []).filter(
+							(c) => c.id !== codeExec.id,
+						),
+						codeExec,
+					];
+				}
+			} catch {
+				updates.streamingContent =
+					(currentState.streamingContent || "") + "\n" + event.data;
+			}
+			break;
+		}
+		default: {
+			// Append to streaming content for other events
+			if (event.data) {
+				updates.streamingContent =
+					(currentState.streamingContent || "") + "\n" + event.data;
+			}
+		}
+	}
 
-  return updates;
+	return updates;
 }
 
 /**
@@ -439,552 +494,728 @@ function transformCugaEvent(
  * Handles both AG-UI messages array format and direct string content
  */
 function extractUserMessage(input: {
-  messages?: Array<{ role: string; content: string }>;
-  threadId?: string;
-  contextId?: string;
-  metadata?: Record<string, unknown>;
-}): { query: string; threadId: string; history: Array<{ role: 'user' | 'assistant' | 'system'; content: string }> } {
-  const messages = input.messages || [];
-  const lastMessage = messages[messages.length - 1];
-  const userMessage = lastMessage?.content || '';
-  // Use threadId from input, or contextId (from A2A), or generate new one
-  const threadId = input.threadId || input.contextId || uuidv4();
+	messages?: Array<{ role: string; content: string }>;
+	threadId?: string;
+	contextId?: string;
+	metadata?: Record<string, unknown>;
+}): {
+	query: string;
+	threadId: string;
+	history: Array<{ role: "user" | "assistant" | "system"; content: string }>;
+} {
+	const messages = input.messages || [];
+	const lastMessage = messages[messages.length - 1];
+	const userMessage = lastMessage?.content || "";
+	// Use threadId from input, or contextId (from A2A), or generate new one
+	const threadId = input.threadId || input.contextId || uuidv4();
 
-  // Extract history from messages (all except the last one) or from metadata
-  let history: Array<{ role: 'user' | 'assistant' | 'system'; content: string }> = [];
+	// Extract history from messages (all except the last one) or from metadata
+	let history: Array<{
+		role: "user" | "assistant" | "system";
+		content: string;
+	}> = [];
 
-  // First, check if history is passed in metadata (from A2A protocol)
-  if (input.metadata?.history && Array.isArray(input.metadata.history)) {
-    history = (input.metadata.history as Array<{ role: string; content: string }>).map(msg => ({
-      role: (msg.role === 'user' || msg.role === 'assistant' || msg.role === 'system' ? msg.role : 'user') as 'user' | 'assistant' | 'system',
-      content: msg.content,
-    }));
-  } else if (messages.length > 1) {
-    // Otherwise, use all messages except the last one as history
-    history = messages.slice(0, -1).map(msg => ({
-      role: (msg.role === 'user' || msg.role === 'assistant' || msg.role === 'system' ? msg.role : 'user') as 'user' | 'assistant' | 'system',
-      content: msg.content,
-    }));
-  }
+	// First, check if history is passed in metadata (from A2A protocol)
+	if (input.metadata?.history && Array.isArray(input.metadata.history)) {
+		history = (
+			input.metadata.history as Array<{ role: string; content: string }>
+		).map((msg) => ({
+			role: (msg.role === "user" ||
+			msg.role === "assistant" ||
+			msg.role === "system"
+				? msg.role
+				: "user") as "user" | "assistant" | "system",
+			content: msg.content,
+		}));
+	} else if (messages.length > 1) {
+		// Otherwise, use all messages except the last one as history
+		history = messages.slice(0, -1).map((msg) => ({
+			role: (msg.role === "user" ||
+			msg.role === "assistant" ||
+			msg.role === "system"
+				? msg.role
+				: "user") as "user" | "assistant" | "system",
+			content: msg.content,
+		}));
+	}
 
-  return { query: userMessage, threadId, history };
+	return { query: userMessage, threadId, history };
 }
 
 // Create unified server
 const { app, start } = createUnifiedServer(
-  {
-    name: 'cuga_generalist',
-    description: 'CUGA - Configurable Universal Generalist Agent. Provides browser automation, API orchestration, code execution, and task decomposition capabilities.',
-    baseUrl: BASE_URL,
-    port: PORT,
-    host: HOST,
-    skills: AGENT_SKILLS,
-    tags: ['browser', 'api', 'code', 'planning', 'generalist', 'cuga'],
-    supportsStreaming: true,
-    // Generalist Agent Capabilities - tells orchestrator CUGA can handle complete tasks autonomously
-    autonomousExecution: true, // Can handle complete tasks end-to-end
-    taskDecomposition: true, // Has internal task decomposition (TaskDecompositionAgent)
-    contextPreservation: true, // Maintains context via VariablesManager
-    codeExecution: true, // Has CodeAgent with sandbox execution
-    browserAutomation: true, // Has BrowserPlannerAgent + ActionAgent
-    memoryEnabled: true, // Has memory system for learning
-    multiTenancyAware: false, // CUGA is stateless, doesn't know about Fabric tenancy
-    maxAutonomyLevel: 'task', // Can handle complete tasks autonomously
-  },
-  // Invoke function - non-streaming execution
-  async (input: { messages?: Array<{ role: string; content: string }>; threadId?: string; contextId?: string; metadata?: Record<string, unknown> }, config?: AgentRuntimeConfig) => {
-    const { query, threadId, history } = extractUserMessage(input);
+	{
+		name: "cuga_generalist",
+		description:
+			"CUGA - Configurable Universal Generalist Agent. Provides browser automation, API orchestration, code execution, and task decomposition capabilities.",
+		baseUrl: BASE_URL,
+		port: PORT,
+		host: HOST,
+		skills: AGENT_SKILLS,
+		tags: ["browser", "api", "code", "planning", "generalist", "cuga"],
+		supportsStreaming: true,
+		// Generalist Agent Capabilities - tells orchestrator CUGA can handle complete tasks autonomously
+		autonomousExecution: true, // Can handle complete tasks end-to-end
+		taskDecomposition: true, // Has internal task decomposition (TaskDecompositionAgent)
+		contextPreservation: true, // Maintains context via VariablesManager
+		codeExecution: true, // Has CodeAgent with sandbox execution
+		browserAutomation: true, // Has BrowserPlannerAgent + ActionAgent
+		memoryEnabled: true, // Has memory system for learning
+		multiTenancyAware: false, // CUGA is stateless, doesn't know about Fabric tenancy
+		maxAutonomyLevel: "task", // Can handle complete tasks autonomously
+	},
+	// Invoke function - non-streaming execution
+	async (
+		input: {
+			messages?: Array<{ role: string; content: string }>;
+			threadId?: string;
+			contextId?: string;
+			metadata?: Record<string, unknown>;
+		},
+		config?: AgentRuntimeConfig,
+	) => {
+		const { query, threadId, history } = extractUserMessage(input);
 
-    // Extract credentials from unified server's token exchange (via config.configurable or input)
-    const credentials = extractCredentialsFromConfig(config, input as Record<string, unknown>);
+		// Extract credentials from unified server's token exchange (via config.configurable or input)
+		const credentials = extractCredentialsFromConfig(
+			config,
+			input as Record<string, unknown>,
+		);
 
-    console.log('[CUGA-Wrapper] Invoking CUGA (sync) with:', {
-      queryLength: query.length,
-      threadId,
-      historyLength: history.length,
-      inputKeys: Object.keys(input),
-      hasConfig: !!config,
-      hasCredentials: !!credentials,
-      aiModel: credentials?.model,
-      aiProvider: credentials?.provider,
-    });
+		console.log("[CUGA-Wrapper] Invoking CUGA (sync) with:", {
+			queryLength: query.length,
+			threadId,
+			historyLength: history.length,
+			inputKeys: Object.keys(input),
+			hasConfig: !!config,
+			hasCredentials: !!credentials,
+			aiModel: credentials?.model,
+			aiProvider: credentials?.provider,
+		});
 
-    if (!query) {
-      console.warn('[CUGA-Wrapper] Empty query received');
-      return {
-        response: 'No query provided',
-        variables: {},
-        threadId,
-        streamingContent: '',
-        codeExecutions: [],
-        subtasks: [],
-        browserState: undefined,
-      };
-    }
+		if (!query) {
+			console.warn("[CUGA-Wrapper] Empty query received");
+			return {
+				response: "No query provided",
+				variables: {},
+				threadId,
+				streamingContent: "",
+				codeExecutions: [],
+				subtasks: [],
+				browserState: undefined,
+			};
+		}
 
-    let finalAnswer = '';
-    let variables = {};
-    let lastError: string | undefined;
+		let finalAnswer = "";
+		let variables = {};
+		let lastError: string | undefined;
 
-    // Track full execution state for A2A response
-    let currentState: CugaAgentState = {
-      currentNode: 'ChatAgent',
-      query,
-      threadId,
-      streamingContent: '',
-      codeExecutions: [],
-      subtasks: [],
-      browserState: undefined,
-    };
+		// Track full execution state for A2A response
+		let currentState: CugaAgentState = {
+			currentNode: "ChatAgent",
+			query,
+			threadId,
+			streamingContent: "",
+			codeExecutions: [],
+			subtasks: [],
+			browserState: undefined,
+		};
 
-    // Collect all events from CUGA stream
-    // Pass history for context in follow-up questions, auto_approve for autonomous execution
-    try {
-      for await (const event of streamQuery({ query, thread_id: threadId, api_mode: true, history, auto_approve: true }, credentials)) {
-        console.log(`[CUGA-Wrapper] Event: ${event.name}`);
+		// Collect all events from CUGA stream
+		// Pass history for context in follow-up questions, auto_approve for autonomous execution
+		try {
+			for await (const event of streamQuery(
+				{
+					query,
+					thread_id: threadId,
+					api_mode: true,
+					history,
+					auto_approve: true,
+				},
+				credentials,
+			)) {
+				console.log(`[CUGA-Wrapper] Event: ${event.name}`);
 
-        // Update state with each event to capture code executions, subtasks, etc.
-        const updates = transformCugaEvent(event, currentState);
-        currentState = { ...currentState, ...updates };
+				// Update state with each event to capture code executions, subtasks, etc.
+				const updates = transformCugaEvent(event, currentState);
+				currentState = { ...currentState, ...updates };
 
-        if (event.name === 'Answer') {
-          try {
-            const parsed = JSON.parse(event.data) as CugaFinalAnswer;
-            finalAnswer = parsed.data;
-            variables = parsed.variables || {};
-          } catch {
-            finalAnswer = event.data;
-          }
-        } else if (event.name === 'Stopped') {
-          lastError = 'Execution stopped';
-        }
-      }
-    } catch (error) {
-      console.error('[CUGA-Wrapper] Stream error:', error);
-      lastError = error instanceof Error ? error.message : 'Stream error';
-    }
+				if (event.name === "Answer") {
+					try {
+						const parsed = JSON.parse(
+							event.data,
+						) as CugaFinalAnswer;
+						finalAnswer = parsed.data;
+						variables = parsed.variables || {};
+					} catch {
+						finalAnswer = event.data;
+					}
+				} else if (event.name === "Stopped") {
+					lastError = "Execution stopped";
+				}
+			}
+		} catch (error) {
+			console.error("[CUGA-Wrapper] Stream error:", error);
+			lastError = error instanceof Error ? error.message : "Stream error";
+		}
 
-    // If no answer but had an error, include error in response
-    if (!finalAnswer && lastError) {
-      finalAnswer = `Error: ${lastError}`;
-    }
+		// If no answer but had an error, include error in response
+		if (!finalAnswer && lastError) {
+			finalAnswer = `Error: ${lastError}`;
+		}
 
-    // Return full execution state including code executions, subtasks, browser state
-    return {
-      response: finalAnswer,
-      variables,
-      threadId,
-      streamingContent: finalAnswer,
-      error: lastError,
-      codeExecutions: currentState.codeExecutions || [],
-      subtasks: currentState.subtasks || [],
-      browserState: currentState.browserState,
-      thoughts: currentState.thoughts,
-      status: currentState.status,
-    };
-  },
-  // Transform output for A2A response
-  (output: {
-    response?: string;
-    threadId?: string;
-    variables?: Record<string, unknown>;
-    error?: string;
-    codeExecutions?: CugaCodeExecutionEvent[];
-    subtasks?: CugaSubtask[];
-    browserState?: CugaBrowserScreenshot;
-    thoughts?: string;
-    status?: string;
-  }) => {
-    const response = output.response || '';
-    const artifacts = [];
+		// Return full execution state including code executions, subtasks, browser state
+		return {
+			response: finalAnswer,
+			variables,
+			threadId,
+			streamingContent: finalAnswer,
+			error: lastError,
+			codeExecutions: currentState.codeExecutions || [],
+			subtasks: currentState.subtasks || [],
+			browserState: currentState.browserState,
+			thoughts: currentState.thoughts,
+			status: currentState.status,
+		};
+	},
+	// Transform output for A2A response
+	(output: {
+		response?: string;
+		threadId?: string;
+		variables?: Record<string, unknown>;
+		error?: string;
+		codeExecutions?: CugaCodeExecutionEvent[];
+		subtasks?: CugaSubtask[];
+		browserState?: CugaBrowserScreenshot;
+		thoughts?: string;
+		status?: string;
+	}) => {
+		const response = output.response || "";
+		const artifacts = [];
 
-    // Always include the main result artifact
-    if (response) {
-      artifacts.push({
-        id: uuidv4(),
-        name: 'cuga-result',
-        description: 'CUGA execution result',
-        mimeType: 'text/plain',
-        parts: [{ type: 'text' as const, text: response }],
-      });
-    }
+		// Always include the main result artifact
+		if (response) {
+			artifacts.push({
+				id: uuidv4(),
+				name: "cuga-result",
+				description: "CUGA execution result",
+				mimeType: "text/plain",
+				parts: [{ type: "text" as const, text: response }],
+			});
+		}
 
-    // Add code execution artifacts
-    if (output.codeExecutions && output.codeExecutions.length > 0) {
-      for (const codeExec of output.codeExecutions) {
-        artifacts.push({
-          id: uuidv4(),
-          name: `code-execution-${codeExec.id}`,
-          description: `Code execution (${codeExec.language || 'python'}) - ${codeExec.status}`,
-          mimeType: 'application/json',
-          parts: [
-            {
-              type: 'data' as const,
-              data: {
-                type: 'code-execution',
-                code: codeExec.code,
-                language: codeExec.language || 'python',
-                status: codeExec.status,
-                output: codeExec.output,
-                error: codeExec.error,
-                executionTimeMs: codeExec.executionTimeMs,
-                sandbox: codeExec.sandbox,
-              },
-            },
-          ],
-        });
-      }
-    }
+		// Add code execution artifacts
+		if (output.codeExecutions && output.codeExecutions.length > 0) {
+			for (const codeExec of output.codeExecutions) {
+				artifacts.push({
+					id: uuidv4(),
+					name: `code-execution-${codeExec.id}`,
+					description: `Code execution (${codeExec.language || "python"}) - ${codeExec.status}`,
+					mimeType: "application/json",
+					parts: [
+						{
+							type: "data" as const,
+							data: {
+								type: "code-execution",
+								code: codeExec.code,
+								language: codeExec.language || "python",
+								status: codeExec.status,
+								output: codeExec.output,
+								error: codeExec.error,
+								executionTimeMs: codeExec.executionTimeMs,
+								sandbox: codeExec.sandbox,
+							},
+						},
+					],
+				});
+			}
+		}
 
-    // Add subtasks artifact
-    if (output.subtasks && output.subtasks.length > 0) {
-      artifacts.push({
-        id: uuidv4(),
-        name: 'subtasks',
-        description: `Task decomposition with ${output.subtasks.length} subtasks`,
-        mimeType: 'application/json',
-        parts: [
-          {
-            type: 'data' as const,
-            data: {
-              type: 'subtasks',
-              subtasks: output.subtasks,
-            },
-          },
-        ],
-      });
-    }
+		// Add subtasks artifact
+		if (output.subtasks && output.subtasks.length > 0) {
+			artifacts.push({
+				id: uuidv4(),
+				name: "subtasks",
+				description: `Task decomposition with ${output.subtasks.length} subtasks`,
+				mimeType: "application/json",
+				parts: [
+					{
+						type: "data" as const,
+						data: {
+							type: "subtasks",
+							subtasks: output.subtasks,
+						},
+					},
+				],
+			});
+		}
 
-    // Add browser state artifact
-    if (output.browserState) {
-      artifacts.push({
-        id: uuidv4(),
-        name: 'browser-state',
-        description: `Browser state at ${output.browserState.url}`,
-        mimeType: 'application/json',
-        parts: [
-          {
-            type: 'data' as const,
-            data: {
-              type: 'browser-state',
-              url: output.browserState.url,
-              screenshot: output.browserState.screenshot ? '[base64-image]' : undefined,
-              hasScreenshot: !!output.browserState.screenshot,
-              viewport: output.browserState.viewport,
-              elements: output.browserState.elements,
-            },
-          },
-        ],
-      });
-    }
+		// Add browser state artifact
+		if (output.browserState) {
+			artifacts.push({
+				id: uuidv4(),
+				name: "browser-state",
+				description: `Browser state at ${output.browserState.url}`,
+				mimeType: "application/json",
+				parts: [
+					{
+						type: "data" as const,
+						data: {
+							type: "browser-state",
+							url: output.browserState.url,
+							screenshot: output.browserState.screenshot
+								? "[base64-image]"
+								: undefined,
+							hasScreenshot: !!output.browserState.screenshot,
+							viewport: output.browserState.viewport,
+							elements: output.browserState.elements,
+						},
+					},
+				],
+			});
+		}
 
-    return {
-      response,
-      artifacts,
-      metadata: {
-        threadId: output.threadId,
-        variables: output.variables,
-        ...(output.error ? { error: output.error } : {}),
-        codeExecutions: output.codeExecutions,
-        subtasks: output.subtasks,
-        browserState: output.browserState,
-        thoughts: output.thoughts,
-        status: output.status,
-      },
-    };
-  },
-  // A2A streaming executor with auto-resume support for interrupts
-  async function* (input: { messages?: Array<{ role: string; content: string }>; threadId?: string; contextId?: string; metadata?: Record<string, unknown> }, config?: AgentRuntimeConfig) {
-    const { query, threadId, history } = extractUserMessage(input);
+		return {
+			response,
+			artifacts,
+			metadata: {
+				threadId: output.threadId,
+				variables: output.variables,
+				...(output.error ? { error: output.error } : {}),
+				codeExecutions: output.codeExecutions,
+				subtasks: output.subtasks,
+				browserState: output.browserState,
+				thoughts: output.thoughts,
+				status: output.status,
+			},
+		};
+	},
+	// A2A streaming executor with auto-resume support for interrupts
+	async function* (
+		input: {
+			messages?: Array<{ role: string; content: string }>;
+			threadId?: string;
+			contextId?: string;
+			metadata?: Record<string, unknown>;
+		},
+		config?: AgentRuntimeConfig,
+	) {
+		const { query, threadId, history } = extractUserMessage(input);
 
-    // Extract credentials from unified server's token exchange (via config.configurable or input)
-    const credentials = extractCredentialsFromConfig(config, input as Record<string, unknown>);
+		// Extract credentials from unified server's token exchange (via config.configurable or input)
+		const credentials = extractCredentialsFromConfig(
+			config,
+			input as Record<string, unknown>,
+		);
 
-    // Check if auto_approve is enabled (default true for autonomous execution)
-    const autoApprove = input.metadata?.auto_approve !== false;
-    const maxAutoResumes = 5; // Prevent infinite loops
-    let autoResumeCount = 0;
+		// Check if auto_approve is enabled (default true for autonomous execution)
+		const autoApprove = input.metadata?.auto_approve !== false;
+		const maxAutoResumes = 5; // Prevent infinite loops
+		let autoResumeCount = 0;
 
-    console.log('[CUGA-Wrapper] A2A streaming with:', {
-      queryLength: query.length,
-      threadId,
-      historyLength: history.length,
-      autoApprove,
-      hasConfig: !!config,
-      hasCredentials: !!credentials,
-      aiModel: credentials?.model,
-      aiProvider: credentials?.provider,
-    });
+		console.log("[CUGA-Wrapper] A2A streaming with:", {
+			queryLength: query.length,
+			threadId,
+			historyLength: history.length,
+			autoApprove,
+			hasConfig: !!config,
+			hasCredentials: !!credentials,
+			aiModel: credentials?.model,
+			aiProvider: credentials?.provider,
+		});
 
-    if (!query) {
-      yield { type: 'text' as const, text: 'No query provided' };
-      return;
-    }
+		if (!query) {
+			yield { type: "text" as const, text: "No query provided" };
+			return;
+		}
 
-    let currentState: CugaAgentState = {
-      currentNode: 'ChatAgent',
-      query,
-      threadId,
-      streamingContent: '',
-    };
+		let currentState: CugaAgentState = {
+			currentNode: "ChatAgent",
+			query,
+			threadId,
+			streamingContent: "",
+		};
 
-    // Helper function to process stream events
-    async function* processStream(
-      eventStream: AsyncGenerator<CugaSSEEvent>
-    ): AsyncGenerator<{ type: 'text' | 'error'; text?: string; error?: string }> {
-      for await (const event of eventStream) {
-        const updates = transformCugaEvent(event, currentState);
-        currentState = { ...currentState, ...updates };
+		// Helper function to process stream events
+		async function* processStream(
+			eventStream: AsyncGenerator<CugaSSEEvent>,
+		): AsyncGenerator<{
+			type: "text" | "error";
+			text?: string;
+			error?: string;
+		}> {
+			for await (const event of eventStream) {
+				const updates = transformCugaEvent(event, currentState);
+				currentState = { ...currentState, ...updates };
 
-        // Map CUGA events to A2A streaming format
-        if (event.name === 'Answer') {
-          const answer = currentState.finalAnswer || event.data;
-          yield { type: 'text' as const, text: answer };
-        } else if (event.name === 'Stopped') {
-          yield { type: 'error' as const, error: 'Execution stopped by user' };
-        } else if (event.name === '__interrupt__') {
-          // Handle interrupt - either auto-resume or yield HITL request
-          if (autoApprove && autoResumeCount < maxAutoResumes) {
-            autoResumeCount++;
-            console.log(`[CUGA-Wrapper] Auto-resuming after interrupt (${autoResumeCount}/${maxAutoResumes})`);
-            yield { type: 'text' as const, text: `[Auto-approving action ${autoResumeCount}...]` };
-            // Signal that we need to resume
-            return;
-          }
-          yield {
-            type: 'text' as const,
-            text: `[HITL Required] ${currentState.hitlRequests?.[0]?.message || 'Human approval needed'}`
-          };
-        } else if (currentState.streamingContent) {
-          yield { type: 'text' as const, text: currentState.streamingContent };
-          currentState.streamingContent = '';
-        }
-      }
-    }
+				// Map CUGA events to A2A streaming format
+				if (event.name === "Answer") {
+					const answer = currentState.finalAnswer || event.data;
+					yield { type: "text" as const, text: answer };
+				} else if (event.name === "Stopped") {
+					yield {
+						type: "error" as const,
+						error: "Execution stopped by user",
+					};
+				} else if (event.name === "__interrupt__") {
+					// Handle interrupt - either auto-resume or yield HITL request
+					if (autoApprove && autoResumeCount < maxAutoResumes) {
+						autoResumeCount++;
+						console.log(
+							`[CUGA-Wrapper] Auto-resuming after interrupt (${autoResumeCount}/${maxAutoResumes})`,
+						);
+						yield {
+							type: "text" as const,
+							text: `[Auto-approving action ${autoResumeCount}...]`,
+						};
+						// Signal that we need to resume
+						return;
+					}
+					yield {
+						type: "text" as const,
+						text: `[HITL Required] ${currentState.hitlRequests?.[0]?.message || "Human approval needed"}`,
+					};
+				} else if (currentState.streamingContent) {
+					yield {
+						type: "text" as const,
+						text: currentState.streamingContent,
+					};
+					currentState.streamingContent = "";
+				}
+			}
+		}
 
-    try {
-      // Initial stream with credentials
-      let needsResume = false;
-      for await (const result of processStream(streamQuery({ query, thread_id: threadId, api_mode: true, history, auto_approve: autoApprove }, credentials))) {
-        yield result;
-        // Check if we hit an interrupt that needs auto-resume
-        if (result.type === 'text' && result.text?.includes('[Auto-approving action')) {
-          needsResume = true;
-        }
-      }
+		try {
+			// Initial stream with credentials
+			let needsResume = false;
+			for await (const result of processStream(
+				streamQuery(
+					{
+						query,
+						thread_id: threadId,
+						api_mode: true,
+						history,
+						auto_approve: autoApprove,
+					},
+					credentials,
+				),
+			)) {
+				yield result;
+				// Check if we hit an interrupt that needs auto-resume
+				if (
+					result.type === "text" &&
+					result.text?.includes("[Auto-approving action")
+				) {
+					needsResume = true;
+				}
+			}
 
-      // Auto-resume loop for interrupts
-      while (needsResume && autoResumeCount <= maxAutoResumes) {
-        needsResume = false;
-        console.log(`[CUGA-Wrapper] Resuming execution for thread ${threadId}`);
+			// Auto-resume loop for interrupts
+			while (needsResume && autoResumeCount <= maxAutoResumes) {
+				needsResume = false;
+				console.log(
+					`[CUGA-Wrapper] Resuming execution for thread ${threadId}`,
+				);
 
-        // Resume with approve action and credentials
-        for await (const result of processStream(resumeExecution({ thread_id: threadId, action: 'approve' }, credentials))) {
-          yield result;
-          if (result.type === 'text' && result.text?.includes('[Auto-approving action')) {
-            needsResume = true;
-          }
-        }
-      }
+				// Resume with approve action and credentials
+				for await (const result of processStream(
+					resumeExecution(
+						{ thread_id: threadId, action: "approve" },
+						credentials,
+					),
+				)) {
+					yield result;
+					if (
+						result.type === "text" &&
+						result.text?.includes("[Auto-approving action")
+					) {
+						needsResume = true;
+					}
+				}
+			}
 
-      if (autoResumeCount >= maxAutoResumes) {
-        console.warn(`[CUGA-Wrapper] Max auto-resumes (${maxAutoResumes}) reached for thread ${threadId}`);
-        yield { type: 'text' as const, text: '[Max auto-approvals reached. Manual intervention may be required.]' };
-      }
-    } catch (error) {
-      console.error('[CUGA-Wrapper] A2A stream error:', error);
-      yield { type: 'error' as const, error: error instanceof Error ? error.message : 'Stream error' };
-    }
-  },
-  // Platform streaming executor for CopilotKit LangGraphAgent with auto-resume support
-  async function* (input: { messages?: Array<{ role: string; content: string }>; threadId?: string; contextId?: string; metadata?: Record<string, unknown> }, config?: AgentRuntimeConfig): AsyncGenerator<LangGraphStreamEvent> {
-    const { query, threadId, history } = extractUserMessage(input);
+			if (autoResumeCount >= maxAutoResumes) {
+				console.warn(
+					`[CUGA-Wrapper] Max auto-resumes (${maxAutoResumes}) reached for thread ${threadId}`,
+				);
+				yield {
+					type: "text" as const,
+					text: "[Max auto-approvals reached. Manual intervention may be required.]",
+				};
+			}
+		} catch (error) {
+			console.error("[CUGA-Wrapper] A2A stream error:", error);
+			yield {
+				type: "error" as const,
+				error: error instanceof Error ? error.message : "Stream error",
+			};
+		}
+	},
+	// Platform streaming executor for CopilotKit LangGraphAgent with auto-resume support
+	async function* (
+		input: {
+			messages?: Array<{ role: string; content: string }>;
+			threadId?: string;
+			contextId?: string;
+			metadata?: Record<string, unknown>;
+		},
+		config?: AgentRuntimeConfig,
+	): AsyncGenerator<LangGraphStreamEvent> {
+		const { query, threadId, history } = extractUserMessage(input);
 
-    // Extract credentials from unified server's token exchange (via config.configurable or input)
-    const credentials = extractCredentialsFromConfig(config, input as Record<string, unknown>);
+		// Extract credentials from unified server's token exchange (via config.configurable or input)
+		const credentials = extractCredentialsFromConfig(
+			config,
+			input as Record<string, unknown>,
+		);
 
-    // Check if auto_approve is enabled (default true for autonomous execution)
-    const autoApprove = input.metadata?.auto_approve !== false;
-    const maxAutoResumes = 5;
-    let autoResumeCount = 0;
+		// Check if auto_approve is enabled (default true for autonomous execution)
+		const autoApprove = input.metadata?.auto_approve !== false;
+		const maxAutoResumes = 5;
+		let autoResumeCount = 0;
 
-    console.log('[CUGA-Wrapper] Platform streaming with:', {
-      queryLength: query.length,
-      threadId,
-      historyLength: history.length,
-      autoApprove,
-      hasConfig: !!config,
-      hasConfigurable: !!config?.configurable,
-      configurableKeys: config?.configurable ? Object.keys(config.configurable) : [],
-      hasCredentials: !!credentials,
-      aiModel: credentials?.model,
-      aiProvider: credentials?.provider,
-    });
+		console.log("[CUGA-Wrapper] Platform streaming with:", {
+			queryLength: query.length,
+			threadId,
+			historyLength: history.length,
+			autoApprove,
+			hasConfig: !!config,
+			hasConfigurable: !!config?.configurable,
+			configurableKeys: config?.configurable
+				? Object.keys(config.configurable)
+				: [],
+			hasCredentials: !!credentials,
+			aiModel: credentials?.model,
+			aiProvider: credentials?.provider,
+		});
 
-    if (!query) {
-      yield {
-        nodeName: 'Error',
-        state: { error: 'No query provided' },
-        isFinal: true,
-      };
-      return;
-    }
+		if (!query) {
+			yield {
+				nodeName: "Error",
+				state: { error: "No query provided" },
+				isFinal: true,
+			};
+			return;
+		}
 
-    // Initialize state
-    let state: CugaAgentState = {
-      currentNode: 'ChatAgent',
-      query,
-      threadId,
-      streamingContent: '',
-    };
+		// Initialize state
+		let state: CugaAgentState = {
+			currentNode: "ChatAgent",
+			query,
+			threadId,
+			streamingContent: "",
+		};
 
-    // Helper to process stream and detect interrupts
-    async function* processStream(
-      eventStream: AsyncGenerator<CugaSSEEvent>
-    ): AsyncGenerator<{ event: LangGraphStreamEvent; needsResume: boolean }> {
-      for await (const event of eventStream) {
-        const updates = transformCugaEvent(event, state);
-        state = { ...state, ...updates };
+		// Helper to process stream and detect interrupts
+		async function* processStream(
+			eventStream: AsyncGenerator<CugaSSEEvent>,
+		): AsyncGenerator<{
+			event: LangGraphStreamEvent;
+			needsResume: boolean;
+		}> {
+			for await (const event of eventStream) {
+				const updates = transformCugaEvent(event, state);
+				state = { ...state, ...updates };
 
-        console.log(`[CUGA-Wrapper] Platform stream update from node: ${event.name}`);
+				console.log(
+					`[CUGA-Wrapper] Platform stream update from node: ${event.name}`,
+				);
 
-        // Check for interrupt that needs auto-resume
-        if (event.name === '__interrupt__' && autoApprove && autoResumeCount < maxAutoResumes) {
-          autoResumeCount++;
-          console.log(`[CUGA-Wrapper] Platform auto-resuming after interrupt (${autoResumeCount}/${maxAutoResumes})`);
-          yield {
-            event: {
-              nodeName: 'AutoResume',
-              state: { ...state, autoResumeCount, message: `Auto-approving action ${autoResumeCount}...` },
-              isFinal: false,
-            },
-            needsResume: true,
-          };
-          return;
-        }
+				// Check for interrupt that needs auto-resume
+				if (
+					event.name === "__interrupt__" &&
+					autoApprove &&
+					autoResumeCount < maxAutoResumes
+				) {
+					autoResumeCount++;
+					console.log(
+						`[CUGA-Wrapper] Platform auto-resuming after interrupt (${autoResumeCount}/${maxAutoResumes})`,
+					);
+					yield {
+						event: {
+							nodeName: "AutoResume",
+							state: {
+								...state,
+								autoResumeCount,
+								message: `Auto-approving action ${autoResumeCount}...`,
+							},
+							isFinal: false,
+						},
+						needsResume: true,
+					};
+					return;
+				}
 
-        // Yield the update event in LangGraph Platform format
-        yield {
-          event: {
-            nodeName: event.name,
-            state: { ...state },
-            isFinal: event.name === 'Answer',
-          },
-          needsResume: false,
-        };
-      }
-    }
+				// Yield the update event in LangGraph Platform format
+				yield {
+					event: {
+						nodeName: event.name,
+						state: { ...state },
+						isFinal: event.name === "Answer",
+					},
+					needsResume: false,
+				};
+			}
+		}
 
-    try {
-      // Initial stream with credentials
-      let needsResume = false;
-      for await (const { event, needsResume: resume } of processStream(streamQuery({ query, thread_id: threadId, api_mode: true, history, auto_approve: autoApprove }, credentials))) {
-        yield event;
-        if (resume) {
-          needsResume = true;
-        }
-      }
+		try {
+			// Initial stream with credentials
+			let needsResume = false;
+			for await (const { event, needsResume: resume } of processStream(
+				streamQuery(
+					{
+						query,
+						thread_id: threadId,
+						api_mode: true,
+						history,
+						auto_approve: autoApprove,
+					},
+					credentials,
+				),
+			)) {
+				yield event;
+				if (resume) {
+					needsResume = true;
+				}
+			}
 
-      // Auto-resume loop for interrupts
-      while (needsResume && autoResumeCount <= maxAutoResumes) {
-        needsResume = false;
-        console.log(`[CUGA-Wrapper] Platform resuming execution for thread ${threadId}`);
+			// Auto-resume loop for interrupts
+			while (needsResume && autoResumeCount <= maxAutoResumes) {
+				needsResume = false;
+				console.log(
+					`[CUGA-Wrapper] Platform resuming execution for thread ${threadId}`,
+				);
 
-        // Resume with credentials
-        for await (const { event, needsResume: resume } of processStream(resumeExecution({ thread_id: threadId, action: 'approve' }, credentials))) {
-          yield event;
-          if (resume) {
-            needsResume = true;
-          }
-        }
-      }
+				// Resume with credentials
+				for await (const {
+					event,
+					needsResume: resume,
+				} of processStream(
+					resumeExecution(
+						{ thread_id: threadId, action: "approve" },
+						credentials,
+					),
+				)) {
+					yield event;
+					if (resume) {
+						needsResume = true;
+					}
+				}
+			}
 
-      if (autoResumeCount >= maxAutoResumes) {
-        console.warn(`[CUGA-Wrapper] Platform max auto-resumes (${maxAutoResumes}) reached for thread ${threadId}`);
-        yield {
-          nodeName: 'Warning',
-          state: { ...state, warning: 'Max auto-approvals reached. Manual intervention may be required.' },
-          isFinal: false,
-        };
-      }
-    } catch (error) {
-      console.error('[CUGA-Wrapper] Platform stream error:', error);
-      yield {
-        nodeName: 'Error',
-        state: {
-          error: error instanceof Error ? error.message : 'Stream error',
-          status: 'failed',
-        },
-        isFinal: true,
-      };
-    }
-  },
+			if (autoResumeCount >= maxAutoResumes) {
+				console.warn(
+					`[CUGA-Wrapper] Platform max auto-resumes (${maxAutoResumes}) reached for thread ${threadId}`,
+				);
+				yield {
+					nodeName: "Warning",
+					state: {
+						...state,
+						warning:
+							"Max auto-approvals reached. Manual intervention may be required.",
+					},
+					isFinal: false,
+				};
+			}
+		} catch (error) {
+			console.error("[CUGA-Wrapper] Platform stream error:", error);
+			yield {
+				nodeName: "Error",
+				state: {
+					error:
+						error instanceof Error ? error.message : "Stream error",
+					status: "failed",
+				},
+				isFinal: true,
+			};
+		}
+	},
 );
 
 // Add CUGA-specific endpoints
 
 // Health check that proxies to CUGA
-app.get('/cuga/health', async (c: { json: (data: unknown) => Response }) => {
-  const health = await checkHealth();
-  return c.json(health);
+app.get("/cuga/health", async (c: { json: (data: unknown) => Response }) => {
+	const health = await checkHealth();
+	return c.json(health);
 });
 
 // Stop execution endpoint
-app.post('/cuga/stop', async (c: { req: { json: () => Promise<{ thread_id?: string }> }; json: (data: unknown, status?: number) => Response }) => {
-  const body = await c.req.json();
-  const threadId = body.thread_id;
-  if (!threadId) {
-    return c.json({ error: 'thread_id required' }, 400);
-  }
-  await stopExecution(threadId);
-  return c.json({ status: 'stopped' });
-});
+app.post(
+	"/cuga/stop",
+	async (c: {
+		req: { json: () => Promise<{ thread_id?: string }> };
+		json: (data: unknown, status?: number) => Response;
+	}) => {
+		const body = await c.req.json();
+		const threadId = body.thread_id;
+		if (!threadId) {
+			return c.json({ error: "thread_id required" }, 400);
+		}
+		await stopExecution(threadId);
+		return c.json({ status: "stopped" });
+	},
+);
 
 // Resume execution endpoint (for human-in-the-loop)
-app.post('/cuga/resume', async (c: { req: { json: () => Promise<{ thread_id?: string; action?: string; modified_value?: string }> }; json: (data: unknown, status?: number) => Response }) => {
-  const body = await c.req.json();
-  const { thread_id, action, modified_value } = body;
+app.post(
+	"/cuga/resume",
+	async (c: {
+		req: {
+			json: () => Promise<{
+				thread_id?: string;
+				action?: string;
+				modified_value?: string;
+			}>;
+		};
+		json: (data: unknown, status?: number) => Response;
+	}) => {
+		const body = await c.req.json();
+		const { thread_id, action, modified_value } = body;
 
-  if (!thread_id || !action) {
-    return c.json({ error: 'thread_id and action required' }, 400);
-  }
+		if (!thread_id || !action) {
+			return c.json({ error: "thread_id and action required" }, 400);
+		}
 
-  // Validate action type
-  const validActions = ['approve', 'reject', 'modify'] as const;
-  if (!validActions.includes(action as typeof validActions[number])) {
-    return c.json({ error: 'action must be approve, reject, or modify' }, 400);
-  }
+		// Validate action type
+		const validActions = ["approve", "reject", "modify"] as const;
+		if (!validActions.includes(action as (typeof validActions)[number])) {
+			return c.json(
+				{ error: "action must be approve, reject, or modify" },
+				400,
+			);
+		}
 
-  // Stream response
-  const stream = new ReadableStream({
-    async start(controller) {
-      const encoder = new TextEncoder();
-      try {
-        for await (const event of resumeExecution({
-          thread_id,
-          action: action as 'approve' | 'reject' | 'modify',
-          modified_value
-        })) {
-          const data = `event: ${event.name}\ndata: ${event.data}\n\n`;
-          controller.enqueue(encoder.encode(data));
-        }
-      } finally {
-        controller.close();
-      }
-    },
-  });
+		// Stream response
+		const stream = new ReadableStream({
+			async start(controller) {
+				const encoder = new TextEncoder();
+				try {
+					for await (const event of resumeExecution({
+						thread_id,
+						action: action as "approve" | "reject" | "modify",
+						modified_value,
+					})) {
+						const data = `event: ${event.name}\ndata: ${event.data}\n\n`;
+						controller.enqueue(encoder.encode(data));
+					}
+				} finally {
+					controller.close();
+				}
+			},
+		});
 
-  return new Response(stream, {
-    headers: {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
-    },
-  });
-});
+		return new Response(stream, {
+			headers: {
+				"Content-Type": "text/event-stream",
+				"Cache-Control": "no-cache",
+				Connection: "keep-alive",
+			},
+		});
+	},
+);
 
 // Start the server
 start();
 
 export { app };
-

@@ -54,4 +54,3 @@ export default defineConfig({
 	// Generate sourcemaps for debugging
 	sourcemap: true,
 });
-

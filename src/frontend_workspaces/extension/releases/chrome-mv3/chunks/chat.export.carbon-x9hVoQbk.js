@@ -1,4 +1,4 @@
-var s=`.cds-custom--layout--size-xs{
+var s = `.cds-custom--layout--size-xs{
   --cds-custom-layout-size-height-context:var(--cds-custom-layout-size-height-xs, 1.5rem);
   --cds-custom-layout-size-height:var(--cds-custom-layout-size-height-context);
 }
@@ -1910,4 +1910,5 @@ var s=`.cds-custom--layout--size-xs{
     --cds-custom-background-inverse:SelectedItem;
     --cds-custom-layer-selected-inverse:SelectedItem;
   }
-}`;export{s as default};
+}`;
+export { s as default };
