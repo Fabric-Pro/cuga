@@ -21,6 +21,10 @@ export default defineConfig({
 		"pg",
 		"@prisma/adapter-pg",
 		"@prisma/client",
+		// OpenTelemetry uses Node.js core modules (async_hooks) - must be external
+		/^@opentelemetry\//,
+		// prom-client uses dynamic require of Node.js core modules - must be external
+		"prom-client",
 	],
 	// Clean output directory before build
 	clean: true,

@@ -13,6 +13,7 @@
 	"dependencies": {
 		"@hono/node-server": "^1.14.1",
 		"@repo/agent-core": "workspace:*",
+		"@repo/observability": "workspace:*",
 		"@repo/agent-runtime": "workspace:*",
 		"@repo/agent-types": "workspace:*",
 		"@repo/ai-token": "workspace:*",
