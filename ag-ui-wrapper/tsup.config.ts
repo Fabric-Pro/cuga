@@ -17,6 +17,8 @@ export default defineConfig({
 		"@repo/database",
 		// AI package has database imports for dynamic model selection
 		"@repo/ai",
+		// Observability has OpenTelemetry dependencies that must be external
+		"@repo/observability",
 		// Database packages that use dynamic require() - must be external
 		"pg",
 		"@prisma/adapter-pg",
