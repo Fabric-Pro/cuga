@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
 const TOUR_COMPLETED_KEY = "cuga_tour_completed";
 

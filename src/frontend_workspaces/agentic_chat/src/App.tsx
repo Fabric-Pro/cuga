@@ -1,23 +1,22 @@
-import {
-	useState,
+import React, {
 	Component,
-	ErrorInfo,
-	ReactNode,
+	type ErrorInfo,
+	type ReactNode,
 	useCallback,
-	useRef,
 	useEffect,
+	useRef,
+	useState,
 } from "react";
-import React from "react";
 import { createRoot } from "react-dom/client";
-import { CustomChat } from "./CustomChat";
+import { AdvancedTourButton } from "./AdvancedTourButton";
 import { ConfigHeader } from "./ConfigHeader";
+import { CustomChat } from "./CustomChat";
+import { FileAutocomplete } from "./FileAutocomplete";
+import { GuidedTour, type TourStep } from "./GuidedTour";
 import { LeftSidebar } from "./LeftSidebar";
 import { StatusBar } from "./StatusBar";
-import { WorkspacePanel } from "./WorkspacePanel";
-import { FileAutocomplete } from "./FileAutocomplete";
-import { GuidedTour, TourStep } from "./GuidedTour";
 import { useTour } from "./useTour";
-import { AdvancedTourButton } from "./AdvancedTourButton";
+import { WorkspacePanel } from "./WorkspacePanel";
 import "./AppLayout.css";
 import "./mockApi";
 import "./workspaceThrottle"; // Enforce 3-second minimum interval between workspace API calls

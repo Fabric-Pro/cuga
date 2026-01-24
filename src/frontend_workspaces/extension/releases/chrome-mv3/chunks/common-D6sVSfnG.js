@@ -1,4 +1,5 @@
 import { g as ur } from "./sidepanel-DjwwbR2c.js";
+
 var fn, lt;
 function gr() {
 	if (lt) return fn;
@@ -9,14 +10,14 @@ function gr() {
 				? (n.clear =
 						n.delete =
 						n.set =
-							function () {
+							() => {
 								throw new Error("map is read-only");
 							})
 				: n instanceof Set &&
 					(n.add =
 						n.clear =
 						n.delete =
-							function () {
+							() => {
 								throw new Error("set is read-only");
 							}),
 			Object.freeze(n),
@@ -52,7 +53,7 @@ function gr() {
 		const m = Object.create(null);
 		for (const C in n) m[C] = n[C];
 		return (
-			a.forEach(function (C) {
+			a.forEach((C) => {
 				for (const V in C) m[V] = C[V];
 			}),
 			m
@@ -135,7 +136,7 @@ function gr() {
 					? a.addText(m)
 					: m.children &&
 						(a.openNode(m),
-						m.children.forEach((C) => this._walk(a, C)),
+						m.children.forEach((C) => o._walk(a, C)),
 						a.closeNode(m)),
 				a
 			);
@@ -281,7 +282,7 @@ function gr() {
 		J = {
 			begin: /\b(a|an|the|are|I'm|isn't|don't|doesn't|won't|but|just|should|pretty|simply|enough|gonna|going|wtf|so|such|will|you|your|they|like|more)\b/,
 		},
-		oe = function (n, a, m = {}) {
+		oe = (n, a, m = {}) => {
 			const C = s(
 				{ scope: "comment", begin: n, end: a, contains: [] },
 				m,
@@ -345,16 +346,15 @@ function gr() {
 		C_LINE_COMMENT_MODE: Me,
 		C_NUMBER_MODE: Ce,
 		C_NUMBER_RE: K,
-		END_SAME_AS_BEGIN: function (n) {
-			return Object.assign(n, {
+		END_SAME_AS_BEGIN: (n) =>
+			Object.assign(n, {
 				"on:begin": (a, m) => {
 					m.data._beginMatch = a[1];
 				},
 				"on:end": (a, m) => {
 					m.data._beginMatch !== a[1] && m.ignoreMatch();
 				},
-			});
-		},
+			}),
 		HASH_COMMENT_MODE: Ne,
 		IDENT_RE: B,
 		MATCH_NOTHING_RE: D,
@@ -439,14 +439,14 @@ function gr() {
 				? V(m, n.split(" "))
 				: Array.isArray(n)
 					? V(m, n)
-					: Object.keys(n).forEach(function (Q) {
+					: Object.keys(n).forEach((Q) => {
 							Object.assign(C, qe(n[Q], a, Q));
 						}),
 			C
 		);
 		function V(Q, S) {
 			a && (S = S.map((v) => v.toLowerCase())),
-				S.forEach(function (v) {
+				S.forEach((v) => {
 					const k = v.split("|");
 					C[k[0]] = [Q, Ue(k[0], k[1])];
 				});
@@ -651,11 +651,9 @@ function gr() {
 				S.illegal && (k.illegalRe = a(S.illegal)),
 				S.contains || (S.contains = []),
 				(S.contains = [].concat(
-					...S.contains.map(function (j) {
-						return cn(j === "self" ? S : j);
-					}),
+					...S.contains.map((j) => cn(j === "self" ? S : j)),
 				)),
-				S.contains.forEach(function (j) {
+				S.contains.forEach((j) => {
 					Q(j, k);
 				}),
 				S.starts && Q(S.starts, v),
@@ -679,9 +677,9 @@ function gr() {
 		return (
 			n.variants &&
 				!n.cachedVariants &&
-				(n.cachedVariants = n.variants.map(function (a) {
-					return s(n, { variants: null }, a);
-				})),
+				(n.cachedVariants = n.variants.map((a) =>
+					s(n, { variants: null }, a),
+				)),
 			n.cachedVariants
 				? n.cachedVariants
 				: Xe(n)
@@ -701,7 +699,7 @@ function gr() {
 		Ve = s,
 		z = Symbol("nomatch"),
 		De = 7,
-		we = function (n) {
+		we = (n) => {
 			const a = Object.create(null),
 				m = Object.create(null),
 				C = [];
@@ -953,7 +951,8 @@ https://github.com/highlightjs/highlight.js/issues/2277`,
 								'"',
 						);
 						throw (($.mode = I), $);
-					} else if (w.type === "end") {
+					}
+					if (w.type === "end") {
 						const $ = or(w);
 						if ($ !== z) return $;
 					}
@@ -1228,7 +1227,7 @@ https://github.com/highlightjs/highlight.js/issues/2277`,
 			}
 			function Je(u, A) {
 				const P = u;
-				C.forEach(function (q) {
+				C.forEach((q) => {
 					q[P] && q[P](A);
 				});
 			}
@@ -1261,10 +1260,10 @@ https://github.com/highlightjs/highlight.js/issues/2277`,
 				addPlugin: nr,
 				removePlugin: tr,
 			}),
-				(n.debugMode = function () {
+				(n.debugMode = () => {
 					V = !1;
 				}),
-				(n.safeMode = function () {
+				(n.safeMode = () => {
 					V = !0;
 				}),
 				(n.versionString = ln),
@@ -1972,7 +1971,7 @@ function mr() {
 				end: /[{;=]/,
 				excludeEnd: !0,
 				keywords: T,
-				illegal: /[^\w\s\*&:<>.]/,
+				illegal: /[^\w\s*&:<>.]/,
 				contains: [
 					{ begin: d, keywords: T, relevance: 0 },
 					{
@@ -2433,7 +2432,7 @@ function _r() {
 				end: /[{;=]/,
 				excludeEnd: !0,
 				keywords: x,
-				illegal: /[^\w\s\*&:<>.]/,
+				illegal: /[^\w\s*&:<>.]/,
 				contains: [
 					{ begin: d, keywords: x, relevance: 0 },
 					{ begin: E, returnBegin: !0, contains: [f], relevance: 0 },
@@ -3662,7 +3661,7 @@ function Er() {
 		return {
 			name: "CSS",
 			case_insensitive: !0,
-			illegal: /[=|'\$]/,
+			illegal: /[=|'$]/,
 			keywords: { keyframePosition: "from to" },
 			classNameAliases: { keyframePosition: "selector-tag" },
 			contains: [
@@ -4386,7 +4385,7 @@ function Tr() {
 				{ scope: "punctuation", match: /[.]{3}/, relevance: 0 },
 				{
 					scope: "punctuation",
-					begin: /[\!\(\)\:\=\[\]\{\|\}]{1}/,
+					begin: /[!():=[\]{|}]{1}/,
 					relevance: 0,
 				},
 				{
@@ -5380,7 +5379,7 @@ function Rr() {
 								contains: [
 									{
 										begin: /:/,
-										end: /[=,\/]/,
+										end: /[=,/]/,
 										endsWithParent: !0,
 										contains: [N, c.C_LINE_COMMENT_MODE, y],
 										relevance: 0,
@@ -5404,7 +5403,7 @@ function Rr() {
 						],
 						beginScope: { 3: "title.class" },
 						keywords: "class interface trait",
-						end: /[:\{(]|$/,
+						end: /[:{(]|$/,
 						excludeEnd: !0,
 						illegal: "extends implements",
 						contains: [
@@ -5424,7 +5423,7 @@ function Rr() {
 							{
 								className: "type",
 								begin: /[,:]\s*/,
-								end: /[<\(,){\s]|$/,
+								end: /[<(,){\s]|$/,
 								excludeBegin: !0,
 								returnEnd: !0,
 							},
@@ -6246,12 +6245,11 @@ function Mr() {
 			y = "(" + E + "|@\\{" + E + "\\})",
 			N = [],
 			T = [],
-			O = function (ee) {
-				return { className: "string", begin: "~?" + ee + ".*?" + ee };
-			},
-			R = function (ee, ne, W) {
-				return { className: ee, begin: ne, relevance: W };
-			},
+			O = (ee) => ({
+				className: "string",
+				begin: "~?" + ee + ".*?" + ee,
+			}),
+			R = (ee, ne, W) => ({ className: ee, begin: ne, relevance: W }),
 			F = { $pattern: /[a-z-]+/, keyword: f, attribute: d.join(" ") },
 			x = {
 				begin: "\\(",
@@ -6468,7 +6466,7 @@ function Cr() {
 						begin: "\\$\\(" + e.UNDERSCORE_IDENT_RE + "\\)",
 						contains: [e.BACKSLASH_ESCAPE],
 					},
-					{ begin: /\$[@%<?\^\+\*]/ },
+					{ begin: /\$[@%<?^+*]/ },
 				],
 			},
 			s = {
@@ -6492,7 +6490,7 @@ function Cr() {
 				className: "meta",
 				begin: /^\.PHONY:/,
 				end: /$/,
-				keywords: { $pattern: /[\.\w]+/, keyword: ".PHONY" },
+				keywords: { $pattern: /[.\w]+/, keyword: ".PHONY" },
 			},
 			_ = {
 				className: "section",
@@ -6798,15 +6796,15 @@ function Ir() {
 				return t.concat(
 					t.concat("(?:", N, ")"),
 					T,
-					/(?:\\.|[^\\\/])*?/,
+					/(?:\\.|[^\\/])*?/,
 					R,
-					/(?:\\.|[^\\\/])*?/,
+					/(?:\\.|[^\\/])*?/,
 					O,
 					d,
 				);
 			},
 			E = (N, T, O) =>
-				t.concat(t.concat("(?:", N, ")"), T, /(?:\\.|[^\\\/])*?/, O, d),
+				t.concat(t.concat("(?:", N, ")"), T, /(?:\\.|[^\\/])*?/, O, d),
 			y = [
 				o,
 				e.HASH_COMMENT_MODE,
@@ -7658,7 +7656,7 @@ function Ur() {
 	Lt = 1;
 	function r(e) {
 		const t = e.regex,
-			s = new RegExp("[\\p{XID_Start}_]\\p{XID_Continue}*", "u"),
+			s = /[\p{XID_Start}_]\p{XID_Continue}*/u,
 			d = [
 				"and",
 				"as",
@@ -7978,7 +7976,7 @@ function Fr() {
 				/(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?[Li]?/,
 			),
 			c =
-				/[=!<>:]=|\|\||&&|:::?|<-|<<-|->>|->|\|>|[-+*\/?!$&|:<=>@^~]|\*\*/,
+				/[=!<>:]=|\|\||&&|:::?|<-|<<-|->>|->|\|>|[-+*/?!$&|:<=>@^~]|\*\*/,
 			b = t.either(/[()]/, /[{}]/, /\[\[/, /[[\]]/, /\\/, /,/);
 		return {
 			name: "R",
@@ -9841,7 +9839,7 @@ function Gr() {
 			case_insensitive: !0,
 			illegal: /[{}]|<\//,
 			keywords: {
-				$pattern: /\b[\w\.]+/,
+				$pattern: /\b[\w.]+/,
 				keyword: x(y, { when: (D) => D.length < 3 }),
 				literal: b,
 				type: p,
@@ -10469,9 +10467,9 @@ function Hr() {
 			d = {
 				className: "attr",
 				variants: [
-					{ begin: /[\w*@][\w*@ :()\./-]*:(?=[ \t]|$)/ },
-					{ begin: /"[\w*@][\w*@ :()\./-]*":(?=[ \t]|$)/ },
-					{ begin: /'[\w*@][\w*@ :()\./-]*':(?=[ \t]|$)/ },
+					{ begin: /[\w*@][\w*@ :()./-]*:(?=[ \t]|$)/ },
+					{ begin: /"[\w*@][\w*@ :()./-]*":(?=[ \t]|$)/ },
+					{ begin: /'[\w*@][\w*@ :()./-]*':(?=[ \t]|$)/ },
 				],
 			},
 			c = {

@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useCallback } from "react";
 import {
 	Bug,
-	RefreshCw,
+	Check,
 	ChevronDown,
 	ChevronUp,
 	Copy,
-	Check,
+	RefreshCw,
 } from "lucide-react";
+import React, { useCallback, useEffect, useState } from "react";
 import { API_BASE_URL } from "./constants";
 import "./DebugPanel.css";
 

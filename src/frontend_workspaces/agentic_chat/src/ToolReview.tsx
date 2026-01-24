@@ -1,13 +1,13 @@
-import React from "react";
 import {
-	Shield,
 	CheckCircle,
-	Settings,
-	Hash,
-	Type,
 	Database,
 	ExternalLink,
+	Hash,
+	Settings,
+	Shield,
+	Type,
 } from "lucide-react";
+import React from "react";
 
 export default function ToolCallFlowDisplay({ toolData }) {
 	const toolCallData = toolData;
@@ -37,7 +37,7 @@ export default function ToolCallFlowDisplay({ toolData }) {
 								<CheckCircle className="w-4 h-4 text-emerald-500" />
 							</div>
 						)}
-						<h2 className="text-lg font-semibold text-gray-800"></h2>
+						<h2 className="text-lg font-semibold text-gray-800" />
 					</div>
 
 					{/* Flow content */}

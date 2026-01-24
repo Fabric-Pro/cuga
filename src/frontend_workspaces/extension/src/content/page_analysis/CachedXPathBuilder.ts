@@ -9,10 +9,7 @@ export class CachedXPathBuilder {
 	// Add a WeakMap cache for XPath strings
 	private xpathCache = new WeakMap<Element, string>();
 
-	public getXPathTree(
-		element: Element,
-		stopAtBoundary: boolean = true,
-	): string {
+	public getXPathTree(element: Element, stopAtBoundary = true): string {
 		if (this.xpathCache.has(element)) return this.xpathCache.get(element)!;
 
 		const segments: string[] = [];

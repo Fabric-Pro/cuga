@@ -1,7 +1,7 @@
+import { BootstrapAgentic } from "agentic_chat";
 import log from "loglevel";
 import { CommandType } from "runtime";
 import browser from "webextension-polyfill";
-import { BootstrapAgentic } from "agentic_chat";
 
 class WorkerConnection {
 	private port: browser.Runtime.Port | undefined;

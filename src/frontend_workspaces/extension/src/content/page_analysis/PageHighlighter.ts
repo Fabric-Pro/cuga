@@ -5,10 +5,10 @@
  * Original code licensed under MIT License
  */
 
-import { NodeHelper } from "./NodeHelper";
-import { ElementHighlighter } from "./ElementHighlighter";
-import { DomCache } from "./DomCache";
-import { CollectedNode, NodeData, TextNodeData } from "./types";
+import type { DomCache } from "./DomCache";
+import type { ElementHighlighter } from "./ElementHighlighter";
+import type { NodeHelper } from "./NodeHelper";
+import type { CollectedNode, NodeData, TextNodeData } from "./types";
 
 export class PageHighlighter {
 	highlightIndex: number;
@@ -52,12 +52,12 @@ export class PageHighlighter {
 				continue;
 			}
 
-			let isParentHighlighted =
+			const isParentHighlighted =
 				(node.parentElement &&
 					highlightedNodes.includes(node.parentElement)) ||
 				false;
 
-			let highlighted = this.handleHighlighting(
+			const highlighted = this.handleHighlighting(
 				nodeData,
 				node,
 				parentIframe,

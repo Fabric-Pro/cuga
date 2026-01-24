@@ -1,2 +1,2 @@
-export * from "./sidepanel.module";
 export * from "./http.stream.module";
+export * from "./sidepanel.module";

@@ -1,9 +1,8 @@
-import browser from "webextension-polyfill";
+import { ExponentialBackoff, handleWhen, retry } from "cockatiel";
 import log from "loglevel";
+import { Channels, type Command, type RuntimeContext, uuidv4 } from "runtime";
 import * as responses from "runtime/responses";
-import { Command, Channels, RuntimeContext, uuidv4 } from "runtime";
-import { ExponentialBackoff, retry, handleAll, handleWhen } from "cockatiel";
-import { resolve } from "path";
+import browser from "webextension-polyfill";
 
 /**
  * Provides a mechanism to connect to the service worker and listen for commands.
@@ -14,7 +13,7 @@ export class WorkerConnection {
 	private port: browser.Runtime.Port | undefined;
 	private onMessageBound: (command: Command) => void;
 	private onDisconnectBound: (command: browser.Runtime.Port) => void;
-	private checkingStatus: boolean = false;
+	private checkingStatus = false;
 	private lastChecked: number | undefined = undefined;
 
 	constructor(
@@ -129,7 +128,7 @@ export class WorkerConnection {
 		);
 	}
 
-	public async ensureConnected(force: boolean = false): Promise<void> {
+	public async ensureConnected(force = false): Promise<void> {
 		if (force || !this.port || (this.port && this.port?.error)) {
 			return this.reconnect();
 		}

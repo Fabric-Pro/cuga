@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { X, Save, Plus, Trash2, Upload } from "lucide-react";
+import { Plus, Save, Trash2, X } from "lucide-react";
+import React, { useEffect, useState } from "react";
 import "./ConfigModal.css";
 
 interface KnowledgeSource {
@@ -146,7 +146,7 @@ export default function KnowledgeConfig({ onClose }: KnowledgeConfigProps) {
 										onChange={(e) =>
 											setConfig({
 												...config,
-												chunkSize: parseInt(
+												chunkSize: Number.parseInt(
 													e.target.value,
 												),
 											})
@@ -164,7 +164,7 @@ export default function KnowledgeConfig({ onClose }: KnowledgeConfigProps) {
 										onChange={(e) =>
 											setConfig({
 												...config,
-												chunkOverlap: parseInt(
+												chunkOverlap: Number.parseInt(
 													e.target.value,
 												),
 											})

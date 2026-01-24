@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { X, Save, Plus, Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, Plus, Save, Trash2, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import "./ConfigModal.css";
 import React from "react";
 
@@ -1748,7 +1748,7 @@ export default function PoliciesConfig({ onClose }: PoliciesConfigProps) {
 																	config: {
 																		...guard.config,
 																		maxCallsPerMinute:
-																			parseInt(
+																			Number.parseInt(
 																				e
 																					.target
 																					.value,
@@ -1781,7 +1781,7 @@ export default function PoliciesConfig({ onClose }: PoliciesConfigProps) {
 																	config: {
 																		...guard.config,
 																		maxCallsPerHour:
-																			parseInt(
+																			Number.parseInt(
 																				e
 																					.target
 																					.value,
@@ -2813,7 +2813,7 @@ export default function PoliciesConfig({ onClose }: PoliciesConfigProps) {
 														{
 															maxResponseLength: e
 																.target.value
-																? parseInt(
+																? Number.parseInt(
 																		e.target
 																			.value,
 																	)

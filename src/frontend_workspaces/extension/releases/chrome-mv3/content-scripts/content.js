@@ -4,8 +4,7 @@ var Re = (F, _, O) =>
 		? Se(F, _, { enumerable: !0, configurable: !0, writable: !0, value: O })
 		: (F[_] = O);
 var S = (F, _, O) => Re(F, typeof _ != "symbol" ? _ + "" : _, O);
-var content = (function () {
-	"use strict";
+var content = (() => {
 	function F(A) {
 		return A;
 	}
@@ -24,11 +23,7 @@ var content = (function () {
 				value: Symbol.for("asyncDispose"),
 			});
 	function _(A) {
-		return A &&
-			A.__esModule &&
-			Object.prototype.hasOwnProperty.call(A, "default")
-			? A.default
-			: A;
+		return A && A.__esModule && Object.hasOwn(A, "default") ? A.default : A;
 	}
 	var O = { exports: {} },
 		ae = O.exports,
@@ -37,11 +32,11 @@ var content = (function () {
 		return (
 			te ||
 				((te = 1),
-				(function (A) {
-					(function (e, t) {
+				((A) => {
+					((e, t) => {
 						A.exports ? (A.exports = t()) : (e.log = t());
-					})(ae, function () {
-						var e = function () {},
+					})(ae, () => {
+						var e = () => {},
 							t = "undefined",
 							n =
 								typeof window !== t &&
@@ -58,12 +53,11 @@ var content = (function () {
 							try {
 								return Function.prototype.bind.call(p, b);
 							} catch {
-								return function () {
-									return Function.prototype.apply.apply(p, [
+								return () =>
+									Function.prototype.apply.apply(p, [
 										b,
 										arguments,
 									]);
-								};
 							}
 						}
 						function f() {
@@ -203,27 +197,23 @@ var content = (function () {
 									SILENT: 5,
 								}),
 								(p.methodFactory = E || h),
-								(p.getLevel = function () {
-									return T ?? L ?? I;
-								}),
-								(p.setLevel = function (o, u) {
-									return (
-										(T = c(o)), u !== !1 && k(T), d.call(p)
-									);
-								}),
-								(p.setDefaultLevel = function (o) {
+								(p.getLevel = () => T ?? L ?? I),
+								(p.setLevel = (o, u) => (
+									(T = c(o)), u !== !1 && k(T), d.call(p)
+								)),
+								(p.setDefaultLevel = (o) => {
 									(L = c(o)), P() || p.setLevel(o, !1);
 								}),
-								(p.resetLevel = function () {
+								(p.resetLevel = () => {
 									(T = null), a(), d.call(p);
 								}),
-								(p.enableAll = function (o) {
+								(p.enableAll = (o) => {
 									p.setLevel(p.levels.TRACE, o);
 								}),
-								(p.disableAll = function (o) {
+								(p.disableAll = (o) => {
 									p.setLevel(p.levels.SILENT, o);
 								}),
-								(p.rebuild = function () {
+								(p.rebuild = () => {
 									if (
 										(g !== p && (I = c(g.getLevel())),
 										d.call(p),
@@ -236,7 +226,7 @@ var content = (function () {
 							l != null && (T = c(l)), d.call(p);
 						}
 						(g = new y()),
-							(g.getLogger = function (E) {
+							(g.getLogger = (E) => {
 								if (
 									(typeof E != "symbol" &&
 										typeof E != "string") ||
@@ -253,17 +243,13 @@ var content = (function () {
 							});
 						var D = typeof window !== t ? window.log : void 0;
 						return (
-							(g.noConflict = function () {
-								return (
-									typeof window !== t &&
-										window.log === g &&
-										(window.log = D),
-									g
-								);
-							}),
-							(g.getLoggers = function () {
-								return r;
-							}),
+							(g.noConflict = () => (
+								typeof window !== t &&
+									window.log === g &&
+									(window.log = D),
+								g
+							)),
+							(g.getLoggers = () => r),
 							(g.default = g),
 							g
 						);
@@ -281,51 +267,44 @@ var content = (function () {
 		return (
 			ne ||
 				((ne = 1),
-				(function (A) {
-					(function (e, t) {
+				((A) => {
+					((e, t) => {
 						A.exports ? (A.exports = t()) : (e.prefix = t(e));
-					})(ge, function (e) {
-						var t = function (d) {
+					})(ge, (e) => {
+						var t = (d) => {
 								for (
 									var m = 1, h = arguments.length, y;
 									m < h;
 									m++
 								)
 									for (y in arguments[m])
-										Object.prototype.hasOwnProperty.call(
-											arguments[m],
-											y,
-										) && (d[y] = arguments[m][y]);
+										Object.hasOwn(arguments[m], y) &&
+											(d[y] = arguments[m][y]);
 								return d;
 							},
 							n = {
 								template: "[%t] %l:",
-								levelFormatter: function (d) {
-									return d.toUpperCase();
-								},
-								nameFormatter: function (d) {
-									return d || "root";
-								},
-								timestampFormatter: function (d) {
-									return d
+								levelFormatter: (d) => d.toUpperCase(),
+								nameFormatter: (d) => d || "root",
+								timestampFormatter: (d) =>
+									d
 										.toTimeString()
 										.replace(
 											/.*(\d{2}:\d{2}:\d{2}).*/,
 											"$1",
-										);
-								},
+										),
 								format: void 0,
 							},
 							i,
 							r = {},
-							g = function (d) {
+							g = (d) => {
 								if (!d || !d.getLogger)
 									throw new TypeError(
 										"Argument is not a root logger",
 									);
 								i = d;
 							},
-							s = function (d, m) {
+							s = (d, m) => {
 								if (!d || !d.setLevel)
 									throw new TypeError(
 										"Argument is not a logger",
@@ -339,7 +318,7 @@ var content = (function () {
 										M = T.template.indexOf("%t") !== -1,
 										k = T.template.indexOf("%l") !== -1,
 										P = T.template.indexOf("%n") !== -1;
-									return function () {
+									return () => {
 										for (
 											var a = "",
 												c = arguments.length,
@@ -399,9 +378,9 @@ var content = (function () {
 						return (
 							e &&
 								((w = e.prefix),
-								(f.noConflict = function () {
-									return e.prefix === f && (e.prefix = w), f;
-								})),
+								(f.noConflict = () => (
+									e.prefix === f && (e.prefix = w), f
+								))),
 							f
 						);
 					});
@@ -523,7 +502,7 @@ var content = (function () {
 					h = t % m.length,
 					y = m[h],
 					D = y + "1A";
-				let b = { x: 0, y: 0 };
+				const b = { x: 0, y: 0 };
 				if (n) {
 					const l = n.getBoundingClientRect();
 					(b.x = l.left), (b.y = l.top);
@@ -580,7 +559,7 @@ var content = (function () {
 					};
 				})(() => {
 					const l = e.getClientRects();
-					let o = { x: 0, y: 0 };
+					const o = { x: 0, y: 0 };
 					if (n) {
 						const u = n.getBoundingClientRect();
 						(o.x = u.left), (o.y = u.top);
@@ -664,7 +643,7 @@ var content = (function () {
 			if (i) {
 				const s = i.match(/(\d+)(?!.*\d)/);
 				if (s) {
-					n = parseInt(s[1], 10);
+					n = Number.parseInt(s[1], 10);
 					const f = window[t] ?? 0;
 					n > f && (window[t] = n);
 				} else {
@@ -1077,7 +1056,8 @@ var content = (function () {
 					(n && !this.isListboxRelatedElement(i, n))
 				)
 					continue;
-				let s = (i.parentElement && t.includes(i.parentElement)) || !1;
+				const s =
+					(i.parentElement && t.includes(i.parentElement)) || !1;
 				this.handleHighlighting(r, i, g, s) && t.push(i);
 			}
 		}
@@ -1719,7 +1699,7 @@ var content = (function () {
 			if (!this.isElementVisible(e)) return 0;
 			const t = window.getComputedStyle(e),
 				n = e.getBoundingClientRect();
-			let i = parseFloat(t.opacity) || 1;
+			let i = Number.parseFloat(t.opacity) || 1;
 			return (
 				n.width * n.height < 100 && (i *= 0.5),
 				(n.top >= 0 &&
@@ -1972,7 +1952,7 @@ var content = (function () {
 						case "ping":
 							n({ type: "pong", timestamp: Date.now() });
 							break;
-						case "mark_elements":
+						case "mark_elements": {
 							this.unmarkElements();
 							const w = this.markElements(
 								e.data.frameId || "",
@@ -1981,13 +1961,15 @@ var content = (function () {
 							);
 							n({ type: "success", warnings: w });
 							break;
+						}
 						case "unmark_elements":
 							this.unmarkElements(), n({ type: "success" });
 							break;
-						case "get_focused_element_bid":
+						case "get_focused_element_bid": {
 							const d = this.getFocusedElementBid();
 							n({ type: "success", data: d });
 							break;
+						}
 						case "get_element_rect": {
 							try {
 								const h = document.querySelector(
@@ -2014,13 +1996,14 @@ var content = (function () {
 							}
 							break;
 						}
-						case "extract_page_content":
+						case "extract_page_content": {
 							const m =
 								(i = e.data) != null && i.asText
 									? this.extractPageContentAsText()
 									: this.extractPageContent();
 							n({ type: "success", data: m });
 							break;
+						}
 						case "extract_dom_tree":
 							try {
 								const h =
@@ -2261,8 +2244,8 @@ var content = (function () {
 		return (
 			oe ||
 				((oe = 1),
-				(function (A, e) {
-					(function (t, n) {
+				((A, e) => {
+					((t, n) => {
 						n(A);
 					})(
 						typeof globalThis < "u"
@@ -2270,7 +2253,7 @@ var content = (function () {
 							: typeof self < "u"
 								? self
 								: Ce,
-						function (t) {
+						(t) => {
 							var n, i;
 							if (
 								!(
@@ -2985,8 +2968,9 @@ var content = (function () {
 												a == 1
 													? "argument"
 													: "arguments",
-											y = (a, c) =>
-												function (o, ...u) {
+											y =
+												(a, c) =>
+												(o, ...u) => {
 													if (u.length < c.minArgs)
 														throw new Error(
 															`Expected at least ${c.minArgs} ${h(c.minArgs)} for ${a}(), got ${u.length}`,
@@ -3056,11 +3040,11 @@ var content = (function () {
 														);
 													},
 												});
-										let b = Function.call.bind(
+										const b = Function.call.bind(
 											Object.prototype.hasOwnProperty,
 										);
 										const E = (a, c = {}, l = {}) => {
-												let o = Object.create(null),
+												const o = Object.create(null),
 													u = {
 														has(v, x) {
 															return (
@@ -3091,7 +3075,7 @@ var content = (function () {
 																else if (
 																	b(l, x)
 																) {
-																	let $ = y(
+																	const $ = y(
 																		x,
 																		l[x],
 																	);
@@ -3203,7 +3187,7 @@ var content = (function () {
 											I = new w((a) =>
 												typeof a != "function"
 													? a
-													: function (l) {
+													: (l) => {
 															const o = E(
 																l,
 																{},
@@ -3221,21 +3205,20 @@ var content = (function () {
 											L = new w((a) =>
 												typeof a != "function"
 													? a
-													: function (l, o, u) {
+													: (l, o, u) => {
 															let C = !1,
 																v,
 																x = new Promise(
 																	(W) => {
-																		v =
-																			function (
-																				H,
-																			) {
-																				(C =
-																					!0),
-																					W(
-																						H,
-																					);
-																			};
+																		v = (
+																			H,
+																		) => {
+																			(C =
+																				!0),
+																				W(
+																					H,
+																				);
+																		};
 																	},
 																),
 																N;
@@ -3402,7 +3385,7 @@ var content = (function () {
 			}
 		};
 	S(Y, "EVENT_NAME", Q("wxt:locationchange"));
-	let q = Y;
+	const q = Y;
 	function Q(A) {
 		var e;
 		return `${((e = G == null ? void 0 : G.runtime)) == null ? void 0 : e.id}:content:${A}`;
@@ -3414,7 +3397,7 @@ var content = (function () {
 				e == null &&
 					((t = new URL(location.href)),
 					(e = A.setInterval(() => {
-						let n = new URL(location.href);
+						const n = new URL(location.href);
 						n.href !== t.href &&
 							(window.dispatchEvent(new q(n, t)), (t = n));
 					}, 1e3)));
@@ -3539,7 +3522,7 @@ var content = (function () {
 		}
 	};
 	S(B, "SCRIPT_STARTED_MESSAGE_TYPE", Q("wxt:content-script-started"));
-	let K = B;
+	const K = B;
 	function Pe() {}
 	function Z(A, ...e) {}
 	const Ne = {

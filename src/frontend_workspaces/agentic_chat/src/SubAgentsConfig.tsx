@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { X, Save, Plus, Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, Plus, Save, Trash2, X } from "lucide-react";
+import React, { useEffect, useState } from "react";
 import "./ConfigModal.css";
 
 interface Tool {

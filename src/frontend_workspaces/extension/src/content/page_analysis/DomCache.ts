@@ -5,7 +5,7 @@
  * Original code licensed under MIT License
  */
 
-import { IDomCache as IDomCache } from "./types";
+import type { IDomCache } from "./types";
 
 export class DomCache implements IDomCache {
 	public boundingRects = new WeakMap<Element, DOMRect>();

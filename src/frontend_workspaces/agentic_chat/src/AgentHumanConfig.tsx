@@ -1,14 +1,5 @@
-import React, { useState, useEffect } from "react";
-import {
-	X,
-	Save,
-	Plus,
-	Trash2,
-	UserCog,
-	Zap,
-	Users as UsersIcon,
-	Shield,
-} from "lucide-react";
+import { Plus, Save, Shield, Users as UsersIcon, X, Zap } from "lucide-react";
+import React, { useEffect, useState } from "react";
 import "./ConfigModal.css";
 
 interface HumanInterventionRule {
@@ -263,7 +254,7 @@ export default function AgentHumanConfig({ onClose }: AgentHumanConfigProps) {
 										onChange={(e) =>
 											setConfig({
 												...config,
-												autonomyLevel: parseInt(
+												autonomyLevel: Number.parseInt(
 													e.target.value,
 												) as 1 | 2 | 3,
 											})
@@ -809,7 +800,9 @@ export default function AgentHumanConfig({ onClose }: AgentHumanConfigProps) {
 											adaptiveLearning: {
 												...config.adaptiveLearning,
 												minInteractionsBeforeLearning:
-													parseInt(e.target.value),
+													Number.parseInt(
+														e.target.value,
+													),
 											},
 										})
 									}

@@ -1,4 +1,5 @@
-import { r as u, g as M } from "./sidepanel-DjwwbR2c.js";
+import { g as M, r as u } from "./sidepanel-DjwwbR2c.js";
+
 function d(n, i) {
 	for (var o = 0; o < i.length; o++) {
 		const e = i[o];
@@ -26,10 +27,10 @@ function m() {
 	return (
 		l ||
 			((l = 1),
-			(function (n, i) {
-				(function (o, e) {
+			((n, i) => {
+				((o, e) => {
 					n.exports = e(u());
-				})(Y, function (o) {
+				})(Y, (o) => {
 					function e(t) {
 						return t && typeof t == "object" && "default" in t
 							? t
@@ -51,9 +52,7 @@ function m() {
 								"1월_2월_3월_4월_5월_6월_7월_8월_9월_10월_11월_12월".split(
 									"_",
 								),
-							ordinal: function (t) {
-								return t + "일";
-							},
+							ordinal: (t) => t + "일",
 							formats: {
 								LT: "A h:mm",
 								LTS: "A h:mm:ss",
@@ -66,9 +65,7 @@ function m() {
 								lll: "YYYY년 MMMM D일 A h:mm",
 								llll: "YYYY년 MMMM D일 dddd A h:mm",
 							},
-							meridiem: function (t) {
-								return t < 12 ? "오전" : "오후";
-							},
+							meridiem: (t) => (t < 12 ? "오전" : "오후"),
 							relativeTime: {
 								future: "%s 후",
 								past: "%s 전",

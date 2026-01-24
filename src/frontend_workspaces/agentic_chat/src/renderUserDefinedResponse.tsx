@@ -1,5 +1,5 @@
+import type { ChatInstance, RenderUserDefinedState } from "@carbon/ai-chat";
 import React from "react";
-import { ChatInstance, RenderUserDefinedState } from "@carbon/ai-chat";
 
 import CardManager from "./CardManager";
 

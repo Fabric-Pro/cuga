@@ -1,4 +1,5 @@
 import { r as l, g as m } from "./sidepanel-DjwwbR2c.js";
+
 function M(a, u) {
 	for (var n = 0; n < u.length; n++) {
 		const e = u[n];
@@ -26,10 +27,10 @@ function y() {
 	return (
 		f ||
 			((f = 1),
-			(function (a, u) {
-				(function (n, e) {
+			((a, u) => {
+				((n, e) => {
 					a.exports = e(l());
-				})(Y, function (n) {
+				})(Y, (n) => {
 					function e(r) {
 						return r && typeof r == "object" && "default" in r
 							? r
@@ -78,9 +79,7 @@ function y() {
 							months: o,
 							monthsShort: o,
 							weekStart: 6,
-							meridiem: function (r) {
-								return r > 12 ? "م" : "ص";
-							},
+							meridiem: (r) => (r > 12 ? "م" : "ص"),
 							relativeTime: {
 								future: "بعد %s",
 								past: "منذ %s",
@@ -96,23 +95,15 @@ function y() {
 								y: "عام واحد",
 								yy: "%d أعوام",
 							},
-							preparse: function (r) {
-								return r
-									.replace(/[١٢٣٤٥٦٧٨٩٠]/g, function (_) {
-										return d[_];
-									})
-									.replace(/،/g, ",");
-							},
-							postformat: function (r) {
-								return r
-									.replace(/\d/g, function (_) {
-										return c[_];
-									})
-									.replace(/,/g, "،");
-							},
-							ordinal: function (r) {
-								return r;
-							},
+							preparse: (r) =>
+								r
+									.replace(/[١٢٣٤٥٦٧٨٩٠]/g, (_) => d[_])
+									.replace(/،/g, ","),
+							postformat: (r) =>
+								r
+									.replace(/\d/g, (_) => c[_])
+									.replace(/,/g, "،"),
+							ordinal: (r) => r,
 							formats: {
 								LT: "HH:mm",
 								LTS: "HH:mm:ss",

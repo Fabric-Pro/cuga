@@ -1,7 +1,7 @@
 import path from "path";
-import { ConfigEnv, defineConfig } from "wxt";
-import { viteStaticCopy } from "vite-plugin-static-copy";
 import { normalizePath } from "vite";
+import { viteStaticCopy } from "vite-plugin-static-copy";
+import { type ConfigEnv, defineConfig } from "wxt";
 
 // See https://wxt.dev/api/config.html
 export default defineConfig({

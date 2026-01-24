@@ -9,7 +9,7 @@ const COMMAND_RESULT_URL = `${SERVER_BASE}/extension/command_result`;
 
 export class HttpStreamModule {
 	private eventSource: EventSource | null = null;
-	private isConnected: boolean = false;
+	private isConnected = false;
 	// Track pending agent queries from popup
 	private pendingAgentQueries: Map<string, (response: any) => void> =
 		new Map();
@@ -299,7 +299,7 @@ export class HttpStreamModule {
 				clickCount: 1,
 			},
 		);
-		console.log(`[CUGA] Click completed successfully`);
+		console.log("[CUGA] Click completed successfully");
 		return { success: true, position: { x: centerX, y: centerY } };
 	}
 
@@ -362,7 +362,7 @@ export class HttpStreamModule {
 			await new Promise((resolve) => setTimeout(resolve, 10));
 		}
 		if (press_enter) {
-			console.log(`[CUGA] Pressing Enter after typing`);
+			console.log("[CUGA] Pressing Enter after typing");
 			await (globalThis as any).chrome.debugger.sendCommand(
 				{ tabId: activeTab.id },
 				"Input.dispatchKeyEvent",
@@ -384,7 +384,7 @@ export class HttpStreamModule {
 				},
 			);
 		}
-		console.log(`[CUGA] Type completed successfully`);
+		console.log("[CUGA] Type completed successfully");
 		return { success: true, value: value, press_enter: press_enter };
 	}
 

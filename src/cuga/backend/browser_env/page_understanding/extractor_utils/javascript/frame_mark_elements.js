@@ -155,11 +155,11 @@ async ([parent_bid, bid_attr_name, tags_to_mark]) => {
 	// mechanism for computing all element's visibility
 	// the intersection observer will set the visibility ratio of elements entering / exiting the viewport
 	// a set is used to keep track of not-yet-visited elements
-	let elems_to_be_visited = new Set();
-	let intersection_observer = new IntersectionObserver(
+	const elems_to_be_visited = new Set();
+	const intersection_observer = new IntersectionObserver(
 		(entries) => {
 			entries.forEach((entry) => {
-				let elem = entry.target;
+				const elem = entry.target;
 				elem.setAttribute(
 					"browsergym_visibility_ratio",
 					Math.round(entry.intersectionRatio * 100) / 100,
@@ -174,22 +174,22 @@ async ([parent_bid, bid_attr_name, tags_to_mark]) => {
 		},
 	);
 
-	let all_bids = new Set();
+	const all_bids = new Set();
 
 	// get all DOM elements in the current frame (does not include elements in shadowDOMs)
 	let elements = Array.from(document.querySelectorAll("*"));
-	let som_buttons = [];
+	const som_buttons = [];
 	i = 0;
 	while (i < elements.length) {
 		const elem = elements[i];
 		// add shadowDOM elements to the elements array, in such a way that order is preserved
 		// TODO: do we really need the order preserved?
 		if (elem.shadowRoot !== null) {
-			elements = new Array(
+			elements = [
 				...Array.prototype.slice.call(elements, 0, i + 1),
 				...Array.from(elem.shadowRoot.querySelectorAll("*")),
 				...Array.prototype.slice.call(elements, i + 1),
-			);
+			];
 		}
 		i++;
 		// decide if the current element should be marked or not
@@ -210,7 +210,7 @@ async ([parent_bid, bid_attr_name, tags_to_mark]) => {
 			// non-recognized argument
 			default:
 				throw new Error(
-					`Invalid value for parameter \"tags_to_mark\": ${JSON.stringify(tags_to_mark)}`,
+					`Invalid value for parameter "tags_to_mark": ${JSON.stringify(tags_to_mark)}`,
 				);
 		}
 		// Processing element
@@ -286,8 +286,9 @@ async ([parent_bid, bid_attr_name, tags_to_mark]) => {
 				elem.onclick != null ||
 				window.getComputedStyle(elem).cursor == "pointer"
 			) {
-				let rect = elem.getBoundingClientRect();
-				let area = (rect.right - rect.left) * (rect.bottom - rect.top);
+				const rect = elem.getBoundingClientRect();
+				const area =
+					(rect.right - rect.left) * (rect.bottom - rect.top);
 				// area is large enough
 				if (area >= 20) {
 					// is not a child of a button (role, type, tag) set to be marked
@@ -335,10 +336,10 @@ async ([parent_bid, bid_attr_name, tags_to_mark]) => {
 		}
 	}
 
-	warning_msgs = new Array();
+	warning_msgs = [];
 
 	// wait for all elements to be visited for visibility
-	let visibility_marking_timeout = 1000; // ms
+	const visibility_marking_timeout = 1000; // ms
 	try {
 		await until(
 			() => elems_to_be_visited.size == 0,
@@ -382,13 +383,14 @@ function whoCapturesCenterClick(element) {
 	var element_at_center = elementFromPoint(x, y); // return the element in the foreground at position (x,y)
 	if (!element_at_center) {
 		return "nobody";
-	} else if (element_at_center === element) {
-		return "self";
-	} else if (element.contains(element_at_center)) {
-		return "child";
-	} else {
-		return "non-descendant";
 	}
+	if (element_at_center === element) {
+		return "self";
+	}
+	if (element.contains(element_at_center)) {
+		return "child";
+	}
+	return "non-descendant";
 }
 
 function push_bid_to_attribute(bid, elem, attr) {
@@ -396,7 +398,7 @@ function push_bid_to_attribute(bid, elem, attr) {
 	if (elem.hasAttribute(attr)) {
 		original_content = elem.getAttribute(attr);
 	}
-	let new_content = `browsergym_id_${bid} ${original_content}`;
+	const new_content = `browsergym_id_${bid} ${original_content}`;
 	elem.setAttribute(attr, new_content);
 }
 

@@ -6,7 +6,11 @@
  */
 
 import { HIGHLIGHT_CONTAINER_ID } from "./constants";
-import { OverlayData, IframeOffset, WindowWithHighlightCleanup } from "./types";
+import type {
+	IframeOffset,
+	OverlayData,
+	WindowWithHighlightCleanup,
+} from "./types";
 
 export class ElementHighlighter {
 	/**
@@ -68,7 +72,7 @@ export class ElementHighlighter {
 			const backgroundColor = baseColor + "1A"; // 10% opacity version of the color
 
 			// Get iframe offset if necessary
-			let iframeOffset: IframeOffset = { x: 0, y: 0 };
+			const iframeOffset: IframeOffset = { x: 0, y: 0 };
 			if (parentIframe) {
 				const iframeRect = parentIframe.getBoundingClientRect(); // Keep getBoundingClientRect for iframe offset
 				iframeOffset.x = iframeRect.left;
@@ -152,7 +156,7 @@ export class ElementHighlighter {
 			// Update positions on scroll/resize
 			const updatePositions = (): void => {
 				const newRects = element.getClientRects(); // Get fresh rects
-				let newIframeOffset: IframeOffset = { x: 0, y: 0 };
+				const newIframeOffset: IframeOffset = { x: 0, y: 0 };
 
 				if (parentIframe) {
 					const iframeRect = parentIframe.getBoundingClientRect(); // Keep getBoundingClientRect for iframe

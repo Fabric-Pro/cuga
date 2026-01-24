@@ -1,4 +1,5 @@
-import { r as m, g as f } from "./sidepanel-DjwwbR2c.js";
+import { g as f, r as m } from "./sidepanel-DjwwbR2c.js";
+
 function p(o, s) {
 	for (var n = 0; n < s.length; n++) {
 		const e = s[n];
@@ -26,10 +27,10 @@ function c() {
 	return (
 		i ||
 			((i = 1),
-			(function (o, s) {
-				(function (n, e) {
+			((o, s) => {
+				((n, e) => {
 					o.exports = e(m());
-				})(l, function (n) {
+				})(l, (n) => {
 					function e(r) {
 						return r && typeof r == "object" && "default" in r
 							? r
@@ -54,7 +55,7 @@ function c() {
 									"_",
 								),
 							weekdaysMin: "Su_Mo_Tu_We_Th_Fr_Sa".split("_"),
-							ordinal: function (r) {
+							ordinal: (r) => {
 								var _ = ["th", "st", "nd", "rd"],
 									d = r % 100;
 								return (

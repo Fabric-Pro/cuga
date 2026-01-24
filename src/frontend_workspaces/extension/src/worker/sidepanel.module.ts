@@ -1,9 +1,7 @@
+import { type Module, RenderSidepanelCommand } from "runtime";
 import browser from "webextension-polyfill";
 import { browser as wxtBrowser } from "wxt/browser";
-
 import { getManifestVersion } from "../functions";
-import { RenderSidepanelCommand } from "runtime";
-import { Module } from "runtime";
 
 export class SidePanel implements Module {
 	private onConnectBound: (port: browser.Runtime.Port) => void;

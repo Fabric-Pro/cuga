@@ -1,4 +1,5 @@
-import { r as Y, g as m } from "./sidepanel-DjwwbR2c.js";
+import { g as m, r as Y } from "./sidepanel-DjwwbR2c.js";
+
 function f(o, i) {
 	for (var n = 0; n < i.length; n++) {
 		const e = i[n];
@@ -26,10 +27,10 @@ function c() {
 	return (
 		u ||
 			((u = 1),
-			(function (o, i) {
-				(function (n, e) {
+			((o, i) => {
+				((n, e) => {
 					o.exports = e(Y());
-				})(p, function (n) {
+				})(p, (n) => {
 					function e(t) {
 						return t && typeof t == "object" && "default" in t
 							? t
@@ -52,9 +53,8 @@ function c() {
 								"1月_2月_3月_4月_5月_6月_7月_8月_9月_10月_11月_12月".split(
 									"_",
 								),
-							ordinal: function (t, l) {
-								return l === "W" ? t + "周" : t + "日";
-							},
+							ordinal: (t, l) =>
+								l === "W" ? t + "周" : t + "日",
 							weekStart: 1,
 							yearStart: 4,
 							formats: {
@@ -84,7 +84,7 @@ function c() {
 								y: "1 年",
 								yy: "%d 年",
 							},
-							meridiem: function (t, l) {
+							meridiem: (t, l) => {
 								var s = 100 * t + l;
 								return s < 600
 									? "凌晨"

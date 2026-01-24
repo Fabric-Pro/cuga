@@ -5,9 +5,9 @@
  * Original code licensed under MIT License
  */
 
-import { Module } from "runtime";
+import type { Module } from "runtime";
 import { buildDomTree } from "./DomTree";
-import { DomTreeArgs, DomTreeResult } from "./types";
+import type { DomTreeArgs, DomTreeResult } from "./types";
 
 /**
  * DOM Tree Module Implementation

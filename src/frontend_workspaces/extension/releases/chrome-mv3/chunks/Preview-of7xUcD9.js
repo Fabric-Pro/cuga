@@ -1,4 +1,5 @@
-import { a as k, g as D } from "./sidepanel-DjwwbR2c.js";
+import { g as D, a as k } from "./sidepanel-DjwwbR2c.js";
+
 function M(c, n) {
 	for (var p = 0; p < n.length; p++) {
 		const o = n[p];
@@ -43,7 +44,7 @@ function q() {
 		},
 		b = (r, e, t, i) => {
 			if ((e && typeof e == "object") || typeof e == "function")
-				for (let a of o(e))
+				for (const a of o(e))
 					!u.call(r, a) &&
 						a !== t &&
 						n(r, a, {

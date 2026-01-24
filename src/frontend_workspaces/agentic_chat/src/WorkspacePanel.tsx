@@ -1,15 +1,15 @@
-import React, { useState, useEffect, useCallback } from "react";
 import {
-	Folder,
-	File,
-	ChevronRight,
 	ChevronDown,
-	X,
+	ChevronRight,
 	Download,
+	File,
 	FileText,
-	RefreshCw,
+	Folder,
 	Info,
+	RefreshCw,
+	X,
 } from "lucide-react";
+import React, { useCallback, useEffect, useState } from "react";
 import "./WorkspacePanel.css";
 
 interface FileNode {
@@ -150,7 +150,7 @@ export function WorkspacePanel({
 		}
 	};
 
-	const renderFileTree = (nodes: FileNode[], level: number = 0) => {
+	const renderFileTree = (nodes: FileNode[], level = 0) => {
 		return nodes.map((node) => (
 			<div key={node.path} style={{ marginLeft: `${level * 16}px` }}>
 				<div

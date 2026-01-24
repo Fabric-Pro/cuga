@@ -1,4 +1,4 @@
-chrome.runtime.onInstalled.addListener(function (details) {
+chrome.runtime.onInstalled.addListener((details) => {
 	console.log("Installed");
 	chrome.sidePanel
 		.setPanelBehavior({ openPanelOnActionClick: true })

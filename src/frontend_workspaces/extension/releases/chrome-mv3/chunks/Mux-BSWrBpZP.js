@@ -1,5 +1,6 @@
-import { a as w, _ as D, g as j } from "./sidepanel-DjwwbR2c.js";
 import { a as C } from "./index-7KKzZJbI.js";
+import { _ as D, g as j, a as w } from "./sidepanel-DjwwbR2c.js";
+
 function S(p, o) {
 	for (var l = 0; l < o.length; l++) {
 		const a = o[l];
@@ -44,7 +45,7 @@ function B() {
 		},
 		m = (r, e, t, i) => {
 			if ((e && typeof e == "object") || typeof e == "function")
-				for (let s of a(e))
+				for (const s of a(e))
 					!h.call(r, s) &&
 						s !== t &&
 						o(r, s, {

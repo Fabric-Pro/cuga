@@ -23,7 +23,7 @@ window.fetch = function (
 		if (timeSinceLastCall < MIN_INTERVAL) {
 			const remainingTime = MIN_INTERVAL - timeSinceLastCall;
 			console.warn(
-				`⚠️ Workspace API throttled! Request blocked. ` +
+				"⚠️ Workspace API throttled! Request blocked. " +
 					`Last call was ${timeSinceLastCall}ms ago. ` +
 					`Minimum interval is ${MIN_INTERVAL}ms. ` +
 					`Wait ${remainingTime}ms before next call.`,

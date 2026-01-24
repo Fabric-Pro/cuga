@@ -1,14 +1,14 @@
-import React, { useState, useEffect, useRef } from "react";
 import {
+	AlertCircle,
+	CheckCircle2,
+	Lightbulb,
+	MoreHorizontal,
+	User,
+	Users,
 	Wrench,
 	Zap,
-	CheckCircle2,
-	AlertCircle,
-	Users,
-	User,
-	MoreHorizontal,
-	Lightbulb,
 } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
 import { exampleUtterances } from "./exampleUtterances";
 import "./StatusBar.css";
 
@@ -800,14 +800,14 @@ export function StatusBar({ threadId }: StatusBarProps) {
 												stroke="currentColor"
 												strokeWidth="2"
 											>
-												<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-												<polyline points="15 3 21 3 21 9"></polyline>
+												<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+												<polyline points="15 3 21 3 21 9" />
 												<line
 													x1="10"
 													y1="14"
 													x2="21"
 													y2="3"
-												></line>
+												/>
 											</svg>
 										</a>
 									</div>

@@ -12,13 +12,13 @@ import { ElementHighlighter } from "./ElementHighlighter";
 import { NodeElementCollector } from "./NodeElementCollector";
 import { NodeHelper } from "./NodeHelper";
 import { PageHighlighter } from "./PageHighlighter";
-import {
+import type {
+	CollectedNode,
 	DomTreeArgs,
 	DomTreeResult,
 	IDomCache,
 	NodeData,
 	TextNodeData,
-	CollectedNode,
 } from "./types";
 
 // Extend global interfaces for dev tools functions

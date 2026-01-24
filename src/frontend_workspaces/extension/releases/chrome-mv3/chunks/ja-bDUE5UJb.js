@@ -1,4 +1,5 @@
 import { r as u, g as Y } from "./sidepanel-DjwwbR2c.js";
+
 function d(n, s) {
 	for (var _ = 0; _ < s.length; _++) {
 		const e = s[_];
@@ -26,10 +27,10 @@ function f() {
 	return (
 		i ||
 			((i = 1),
-			(function (n, s) {
-				(function (_, e) {
+			((n, s) => {
+				((_, e) => {
 					n.exports = e(u());
-				})(m, function (_) {
+				})(m, (_) => {
 					function e(t) {
 						return t && typeof t == "object" && "default" in t
 							? t
@@ -51,9 +52,7 @@ function f() {
 								"1月_2月_3月_4月_5月_6月_7月_8月_9月_10月_11月_12月".split(
 									"_",
 								),
-							ordinal: function (t) {
-								return t + "日";
-							},
+							ordinal: (t) => t + "日",
 							formats: {
 								LT: "HH:mm",
 								LTS: "HH:mm:ss",
@@ -66,9 +65,7 @@ function f() {
 								lll: "YYYY年M月D日 HH:mm",
 								llll: "YYYY年M月D日(ddd) HH:mm",
 							},
-							meridiem: function (t) {
-								return t < 12 ? "午前" : "午後";
-							},
+							meridiem: (t) => (t < 12 ? "午前" : "午後"),
 							relativeTime: {
 								future: "%s後",
 								past: "%s前",

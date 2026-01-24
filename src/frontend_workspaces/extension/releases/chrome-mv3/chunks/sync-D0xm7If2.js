@@ -122,10 +122,10 @@ function N(n, r, e, i, t) {
 	);
 	if (o === 0) o = 1 - l;
 	else {
-		if (o === a) return u ? NaN : (d ? -1 : 1) * (1 / 0);
-		(u = u + Math.pow(2, i)), (o = o - l);
+		if (o === a) return u ? Number.NaN : (d ? -1 : 1) * (1 / 0);
+		(u = u + 2 ** i), (o = o - l);
 	}
-	return (d ? -1 : 1) * u * Math.pow(2, o - i);
+	return (d ? -1 : 1) * u * 2 ** (o - i);
 }
 function H(n, r, e, i, t, o) {
 	var u,
@@ -134,7 +134,7 @@ function H(n, r, e, i, t, o) {
 		l = o * 8 - t - 1,
 		h = (1 << l) - 1,
 		s = h >> 1,
-		x = t === 23 ? Math.pow(2, -24) - Math.pow(2, -77) : 0,
+		x = t === 23 ? 2 ** -24 - 2 ** -77 : 0,
 		d = i ? 0 : o - 1,
 		w = i ? 1 : -1,
 		y = r < 0 || (r === 0 && 1 / r < 0) ? 1 : 0;
@@ -143,15 +143,14 @@ function H(n, r, e, i, t, o) {
 			isNaN(r) || r === 1 / 0
 				? ((c = isNaN(r) ? 1 : 0), (u = h))
 				: ((u = Math.floor(Math.log(r) / Math.LN2)),
-					r * (a = Math.pow(2, -u)) < 1 && (u--, (a *= 2)),
-					u + s >= 1 ? (r += x / a) : (r += x * Math.pow(2, 1 - s)),
+					r * (a = 2 ** -u) < 1 && (u--, (a *= 2)),
+					u + s >= 1 ? (r += x / a) : (r += x * 2 ** (1 - s)),
 					r * a >= 2 && (u++, (a /= 2)),
 					u + s >= h
 						? ((c = 0), (u = h))
 						: u + s >= 1
-							? ((c = (r * a - 1) * Math.pow(2, t)), (u = u + s))
-							: ((c = r * Math.pow(2, s - 1) * Math.pow(2, t)),
-								(u = 0)));
+							? ((c = (r * a - 1) * 2 ** t), (u = u + s))
+							: ((c = r * 2 ** (s - 1) * 2 ** t), (u = 0)));
 		t >= 8;
 		n[e + d] = c & 255, d += w, c /= 256, t -= 8
 	);
@@ -163,11 +162,7 @@ function H(n, r, e, i, t, o) {
 	n[e + d - w] |= y * 128;
 }
 var _r = {}.toString,
-	K =
-		Array.isArray ||
-		function (n) {
-			return _r.call(n) == "[object Array]";
-		},
+	K = Array.isArray || ((n) => _r.call(n) == "[object Array]"),
 	Ar = 50;
 f.TYPED_ARRAY_SUPPORT =
 	W.TYPED_ARRAY_SUPPORT !== void 0 ? W.TYPED_ARRAY_SUPPORT : !0;
@@ -196,9 +191,7 @@ function f(n, r, e) {
 	return X(this, n, r, e);
 }
 f.poolSize = 8192;
-f._augment = function (n) {
-	return (n.__proto__ = f.prototype), n;
-};
+f._augment = (n) => ((n.__proto__ = f.prototype), n);
 function X(n, r, e, i) {
 	if (typeof r == "number")
 		throw new TypeError('"value" argument must not be a number');
@@ -208,9 +201,7 @@ function X(n, r, e, i) {
 			? Ir(n, r, e)
 			: Tr(n, r);
 }
-f.from = function (n, r, e) {
-	return X(null, n, r, e);
-};
+f.from = (n, r, e) => X(null, n, r, e);
 f.TYPED_ARRAY_SUPPORT &&
 	((f.prototype.__proto__ = Uint8Array.prototype),
 	(f.__proto__ = Uint8Array),
@@ -232,20 +223,14 @@ function Fr(n, r, e, i) {
 				: A(n, r)
 	);
 }
-f.alloc = function (n, r, e) {
-	return Fr(null, n, r, e);
-};
+f.alloc = (n, r, e) => Fr(null, n, r, e);
 function $(n, r) {
 	if ((Z(r), (n = A(n, r < 0 ? 0 : J(r) | 0)), !f.TYPED_ARRAY_SUPPORT))
 		for (var e = 0; e < r; ++e) n[e] = 0;
 	return n;
 }
-f.allocUnsafe = function (n) {
-	return $(null, n);
-};
-f.allocUnsafeSlow = function (n) {
-	return $(null, n);
-};
+f.allocUnsafe = (n) => $(null, n);
+f.allocUnsafeSlow = (n) => $(null, n);
 function Ir(n, r, e) {
 	if (((typeof e != "string" || e === "") && (e = "utf8"), !f.isEncoding(e)))
 		throw new TypeError('"encoding" must be a valid string encoding');
@@ -309,7 +294,7 @@ f.isBuffer = T;
 function _(n) {
 	return !!(n != null && n._isBuffer);
 }
-f.compare = function (r, e) {
+f.compare = (r, e) => {
 	if (!_(r) || !_(e)) throw new TypeError("Arguments must be Buffers");
 	if (r === e) return 0;
 	for (var i = r.length, t = e.length, o = 0, u = Math.min(i, t); o < u; ++o)
@@ -319,7 +304,7 @@ f.compare = function (r, e) {
 		}
 	return i < t ? -1 : t < i ? 1 : 0;
 };
-f.isEncoding = function (r) {
+f.isEncoding = (r) => {
 	switch (String(r).toLowerCase()) {
 		case "hex":
 		case "utf8":
@@ -337,7 +322,7 @@ f.isEncoding = function (r) {
 			return !1;
 	}
 };
-f.concat = function (r, e) {
+f.concat = (r, e) => {
 	if (!K(r))
 		throw new TypeError('"list" argument must be an Array of Buffers');
 	if (r.length === 0) return f.alloc(0);
@@ -586,7 +571,7 @@ function Ur(n, r, e, i) {
 	if (o % 2 !== 0) throw new TypeError("Invalid hex string");
 	i > o / 2 && (i = o / 2);
 	for (var u = 0; u < i; ++u) {
-		var c = parseInt(r.substr(u * 2, 2), 16);
+		var c = Number.parseInt(r.substr(u * 2, 2), 16);
 		if (isNaN(c)) return u;
 		n[e + u] = c;
 	}
@@ -805,13 +790,13 @@ f.prototype.readIntLE = function (r, e, i) {
 	(r = r | 0), (e = e | 0), i || p(r, e, this.length);
 	for (var t = this[r], o = 1, u = 0; ++u < e && (o *= 256); )
 		t += this[r + u] * o;
-	return (o *= 128), t >= o && (t -= Math.pow(2, 8 * e)), t;
+	return (o *= 128), t >= o && (t -= 2 ** (8 * e)), t;
 };
 f.prototype.readIntBE = function (r, e, i) {
 	(r = r | 0), (e = e | 0), i || p(r, e, this.length);
 	for (var t = e, o = 1, u = this[r + --t]; t > 0 && (o *= 256); )
 		u += this[r + --t] * o;
-	return (o *= 128), u >= o && (u -= Math.pow(2, 8 * e)), u;
+	return (o *= 128), u >= o && (u -= 2 ** (8 * e)), u;
 };
 f.prototype.readInt8 = function (r, e) {
 	return (
@@ -862,7 +847,7 @@ function g(n, r, e, i, t, o) {
 }
 f.prototype.writeUIntLE = function (r, e, i, t) {
 	if (((r = +r), (e = e | 0), (i = i | 0), !t)) {
-		var o = Math.pow(2, 8 * i) - 1;
+		var o = 2 ** (8 * i) - 1;
 		g(this, r, e, i, o, 0);
 	}
 	var u = 1,
@@ -873,7 +858,7 @@ f.prototype.writeUIntLE = function (r, e, i, t) {
 };
 f.prototype.writeUIntBE = function (r, e, i, t) {
 	if (((r = +r), (e = e | 0), (i = i | 0), !t)) {
-		var o = Math.pow(2, 8 * i) - 1;
+		var o = 2 ** (8 * i) - 1;
 		g(this, r, e, i, o, 0);
 	}
 	var u = i - 1,
@@ -955,7 +940,7 @@ f.prototype.writeUInt32BE = function (r, e, i) {
 };
 f.prototype.writeIntLE = function (r, e, i, t) {
 	if (((r = +r), (e = e | 0), !t)) {
-		var o = Math.pow(2, 8 * i - 1);
+		var o = 2 ** (8 * i - 1);
 		g(this, r, e, i, o - 1, -o);
 	}
 	var u = 0,
@@ -968,7 +953,7 @@ f.prototype.writeIntLE = function (r, e, i, t) {
 };
 f.prototype.writeIntBE = function (r, e, i, t) {
 	if (((r = +r), (e = e | 0), !t)) {
-		var o = Math.pow(2, 8 * i - 1);
+		var o = 2 ** (8 * i - 1);
 		g(this, r, e, i, o - 1, -o);
 	}
 	var u = i - 1,
@@ -1117,7 +1102,7 @@ f.prototype.fill = function (r, e, i, t) {
 	}
 	return this;
 };
-var kr = /[^+\/0-9A-Za-z-_]/g;
+var kr = /[^+/0-9A-Za-z-_]/g;
 function vr(n) {
 	if (((n = Lr(n).replace(kr, "")), n.length < 2)) return "";
 	for (; n.length % 4 !== 0; ) n = n + "=";
@@ -1137,7 +1122,8 @@ function Y(n, r) {
 				if (e > 56319) {
 					(r -= 3) > -1 && o.push(239, 191, 189);
 					continue;
-				} else if (u + 1 === i) {
+				}
+				if (u + 1 === i) {
 					(r -= 3) > -1 && o.push(239, 191, 189);
 					continue;
 				}
@@ -1214,23 +1200,19 @@ function Qr(n) {
 }
 const jr = 46,
 	zr = /\\(\\)?/g,
-	Gr = RegExp(
-		`[^.[\\]]+|\\[(?:([^"'][^[]*)|(["'])((?:(?!\\2)[^\\\\]|\\\\.)*?)\\2)\\]|(?=(?:\\.|\\[\\])(?:\\.|\\[\\]|$))`,
-		"g",
-	),
+	Gr =
+		/[^.[\]]+|\[(?:([^"'][^[]*)|(["'])((?:(?!\2)[^\\]|\\.)*?)\2)\]|(?=(?:\.|\[\])(?:\.|\[\]|$))/g,
 	Hr = /\.|\[(?:[^[\]]*|(["'])(?:(?!\1)[^\\]|\\.)*?\1)\]/,
 	Kr = /^\w*$/,
-	Xr = function (n) {
-		return Object.prototype.toString.call(n);
-	},
-	cr = function (n) {
+	Xr = (n) => Object.prototype.toString.call(n),
+	cr = (n) => {
 		const r = typeof n;
 		return (
 			r === "symbol" ||
 			(r === "object" && n && Xr(n) === "[object Symbol]")
 		);
 	},
-	Zr = function (n, r) {
+	Zr = (n, r) => {
 		if (Array.isArray(n)) return !1;
 		const e = typeof n;
 		return e === "number" ||
@@ -1241,36 +1223,32 @@ const jr = 46,
 			? !0
 			: Kr.test(n) || !Hr.test(n) || (r != null && n in Object(r));
 	},
-	re = function (n) {
+	re = (n) => {
 		const r = [];
 		return (
 			n.charCodeAt(0) === jr && r.push(""),
-			n.replace(Gr, function (e, i, t, o) {
+			n.replace(Gr, (e, i, t, o) => {
 				let u = e;
 				t ? (u = o.replace(zr, "$1")) : i && (u = i.trim()), r.push(u);
 			}),
 			r
 		);
 	},
-	ee = function (n, r) {
-		return Array.isArray(n) ? n : Zr(n, r) ? [n] : re(n);
-	},
-	ne = function (n) {
+	ee = (n, r) => (Array.isArray(n) ? n : Zr(n, r) ? [n] : re(n)),
+	ne = (n) => {
 		if (typeof n == "string" || cr(n)) return n;
 		const r = `${n}`;
 		return r == "0" && 1 / n == -INFINITY ? "-0" : r;
 	},
-	ie = function (n, r) {
+	ie = (n, r) => {
 		r = ee(r, n);
 		let e = 0;
 		const i = r.length;
 		for (; n != null && e < i; ) n = n[ne(r[e++])];
 		return e && e === i ? n : void 0;
 	},
-	te = function (n) {
-		return typeof n == "object" && n !== null && !Array.isArray(n);
-	},
-	ar = function (n) {
+	te = (n) => typeof n == "object" && n !== null && !Array.isArray(n),
+	ar = (n) => {
 		if (n == null) return [void 0, void 0];
 		if (typeof n != "object")
 			return [
@@ -1324,12 +1302,8 @@ class S extends Error {
 			}
 	}
 }
-const oe = function (n) {
-		return n.replace(/([A-Z])/g, function (r, e) {
-			return "_" + e.toLowerCase();
-		});
-	},
-	lr = function (n) {
+const oe = (n) => n.replace(/([A-Z])/g, (r, e) => "_" + e.toLowerCase()),
+	lr = (n) => {
 		const r = {};
 		for (const t in n) r[oe(t)] = n[t];
 		if (r.bom === void 0 || r.bom === null || r.bom === !1) r.bom = !1;
@@ -1431,9 +1405,7 @@ const oe = function (n) {
 			(r.cast.object === void 0 || r.cast.object === null) &&
 				(r.cast.object = (t) => JSON.stringify(t)),
 			(r.cast.string === void 0 || r.cast.string === null) &&
-				(r.cast.string = function (t) {
-					return t;
-				}),
+				(r.cast.string = (t) => t),
 			r.on_record !== void 0 && typeof r.on_record != "function")
 		)
 			return [Error('Invalid Option: "on_record" must be a function.')];
@@ -1470,251 +1442,240 @@ const oe = function (n) {
 		return [void 0, r];
 	},
 	ue = f.from([239, 187, 191]),
-	fe = function (n, r, e) {
-		return {
-			options: n,
-			state: r,
-			info: e,
-			__transform: function (i, t) {
-				if (!Array.isArray(i) && typeof i != "object")
-					return Error(
-						`Invalid Record: expect an array or an object, got ${JSON.stringify(i)}`,
-					);
-				if (this.info.records === 0) {
-					if (Array.isArray(i)) {
-						if (
-							this.options.header === !0 &&
-							this.options.columns === void 0
-						)
-							return Error(
-								"Undiscoverable Columns: header option requires column option or object records",
-							);
-					} else if (this.options.columns === void 0) {
-						const [c, a] = ar(Object.keys(i));
-						if (c) return;
-						this.options.columns = a;
-					}
-				}
-				if (this.info.records === 0) {
-					this.bom(t);
-					const c = this.headers(t);
-					if (c) return c;
-				}
-				try {
-					this.options.on_record &&
-						this.options.on_record(i, this.info.records);
-				} catch (c) {
-					return c;
-				}
-				let o, u;
-				if (this.options.eof) {
-					if ((([o, u] = this.stringify(i)), o)) return o;
-					if (u === void 0) return;
-					u = u + this.options.record_delimiter;
-				} else {
-					if ((([o, u] = this.stringify(i)), o)) return o;
-					if (u === void 0) return;
-					(this.options.header || this.info.records) &&
-						(u = this.options.record_delimiter + u);
-				}
-				this.info.records++, t(u);
-			},
-			stringify: function (i, t = !1) {
-				if (typeof i != "object") return [void 0, i];
-				const { columns: o } = this.options,
-					u = [];
+	fe = (n, r, e) => ({
+		options: n,
+		state: r,
+		info: e,
+		__transform: function (i, t) {
+			if (!Array.isArray(i) && typeof i != "object")
+				return Error(
+					`Invalid Record: expect an array or an object, got ${JSON.stringify(i)}`,
+				);
+			if (this.info.records === 0) {
 				if (Array.isArray(i)) {
-					o && i.splice(o.length);
-					for (let a = 0; a < i.length; a++) {
-						const l = i[a],
-							[h, s] = this.__cast(l, {
-								index: a,
-								column: a,
-								records: this.info.records,
-								header: t,
-							});
-						if (h) return [h];
-						u[a] = [s, l];
-					}
-				} else
-					for (let a = 0; a < o.length; a++) {
-						const l = ie(i, o[a].key),
-							[h, s] = this.__cast(l, {
-								index: a,
-								column: o[a].key,
-								records: this.info.records,
-								header: t,
-							});
-						if (h) return [h];
-						u[a] = [s, l];
-					}
-				let c = "";
-				for (let a = 0; a < u.length; a++) {
-					let l,
-						h,
-						[s, x] = u[a];
-					if (typeof s == "string") l = this.options;
-					else if (te(s)) {
-						if (
-							((l = s),
-							(s = l.value),
-							delete l.value,
-							typeof s != "string" &&
-								s !== void 0 &&
-								s !== null &&
-								h)
-						)
-							return [
-								Error(
-									`Invalid Casting Value: returned value must return a string, null or undefined, got ${JSON.stringify(s)}`,
-								),
-							];
-						if (
-							((l = { ...this.options, ...l }),
-							([h, l] = lr(l)),
-							h !== void 0)
-						)
-							return [h];
-					} else if (s == null) l = this.options;
-					else
+					if (
+						this.options.header === !0 &&
+						this.options.columns === void 0
+					)
+						return Error(
+							"Undiscoverable Columns: header option requires column option or object records",
+						);
+				} else if (this.options.columns === void 0) {
+					const [c, a] = ar(Object.keys(i));
+					if (c) return;
+					this.options.columns = a;
+				}
+			}
+			if (this.info.records === 0) {
+				this.bom(t);
+				const c = this.headers(t);
+				if (c) return c;
+			}
+			try {
+				this.options.on_record &&
+					this.options.on_record(i, this.info.records);
+			} catch (c) {
+				return c;
+			}
+			let o, u;
+			if (this.options.eof) {
+				if ((([o, u] = this.stringify(i)), o)) return o;
+				if (u === void 0) return;
+				u = u + this.options.record_delimiter;
+			} else {
+				if ((([o, u] = this.stringify(i)), o)) return o;
+				if (u === void 0) return;
+				(this.options.header || this.info.records) &&
+					(u = this.options.record_delimiter + u);
+			}
+			this.info.records++, t(u);
+		},
+		stringify: function (i, t = !1) {
+			if (typeof i != "object") return [void 0, i];
+			const { columns: o } = this.options,
+				u = [];
+			if (Array.isArray(i)) {
+				o && i.splice(o.length);
+				for (let a = 0; a < i.length; a++) {
+					const l = i[a],
+						[h, s] = this.__cast(l, {
+							index: a,
+							column: a,
+							records: this.info.records,
+							header: t,
+						});
+					if (h) return [h];
+					u[a] = [s, l];
+				}
+			} else
+				for (let a = 0; a < o.length; a++) {
+					const l = ie(i, o[a].key),
+						[h, s] = this.__cast(l, {
+							index: a,
+							column: o[a].key,
+							records: this.info.records,
+							header: t,
+						});
+					if (h) return [h];
+					u[a] = [s, l];
+				}
+			let c = "";
+			for (let a = 0; a < u.length; a++) {
+				let l,
+					h,
+					[s, x] = u[a];
+				if (typeof s == "string") l = this.options;
+				else if (te(s)) {
+					if (
+						((l = s),
+						(s = l.value),
+						delete l.value,
+						typeof s != "string" && s !== void 0 && s !== null && h)
+					)
 						return [
 							Error(
-								`Invalid Casting Value: returned value must return a string, an object, null or undefined, got ${JSON.stringify(s)}`,
+								`Invalid Casting Value: returned value must return a string, null or undefined, got ${JSON.stringify(s)}`,
 							),
 						];
-					const {
-						delimiter: d,
-						escape: w,
-						quote: y,
-						quoted: hr,
-						quoted_empty: B,
-						quoted_string: M,
-						quoted_match: D,
-						record_delimiter: pr,
-						escape_formulas: dr,
-					} = l;
-					if (s === "" && x === "") {
-						let R =
-							D &&
-							D.filter((U) =>
-								typeof U == "string"
-									? s.indexOf(U) !== -1
-									: U.test(s),
-							);
-						(R = R && R.length > 0),
-							(R || B === !0 || (M === !0 && B !== !1)) === !0 &&
-								(s = y + s + y),
-							(c += s);
-					} else if (s) {
-						if (typeof s != "string")
-							return [
-								Error(
-									`Formatter must return a string, null or undefined, got ${JSON.stringify(s)}`,
-								),
-							];
-						const R = d.length && s.indexOf(d) >= 0,
-							k = y !== "" && s.indexOf(y) >= 0,
-							U = s.indexOf(w) >= 0 && w !== y,
-							wr = s.indexOf(pr) >= 0,
-							xr = M && typeof x == "string";
-						let C =
-							D &&
-							D.filter((F) =>
-								typeof F == "string"
-									? s.indexOf(F) !== -1
-									: F.test(s),
-							);
-						if (((C = C && C.length > 0), dr))
-							switch (s[0]) {
-								case "=":
-								case "+":
-								case "-":
-								case "@":
-								case "	":
-								case "\r":
-								case "＝":
-								case "＋":
-								case "－":
-								case "＠":
-									s = `'${s}`;
-									break;
-							}
-						const V = k === !0 || R || wr || hr || xr || C;
-						if (V === !0 && U === !0) {
-							const F =
-								w === "\\"
-									? new RegExp(w + w, "g")
-									: new RegExp(w, "g");
-							s = s.replace(F, w + w);
+					if (
+						((l = { ...this.options, ...l }),
+						([h, l] = lr(l)),
+						h !== void 0)
+					)
+						return [h];
+				} else if (s == null) l = this.options;
+				else
+					return [
+						Error(
+							`Invalid Casting Value: returned value must return a string, an object, null or undefined, got ${JSON.stringify(s)}`,
+						),
+					];
+				const {
+					delimiter: d,
+					escape: w,
+					quote: y,
+					quoted: hr,
+					quoted_empty: B,
+					quoted_string: M,
+					quoted_match: D,
+					record_delimiter: pr,
+					escape_formulas: dr,
+				} = l;
+				if (s === "" && x === "") {
+					let R =
+						D &&
+						D.filter((U) =>
+							typeof U == "string"
+								? s.indexOf(U) !== -1
+								: U.test(s),
+						);
+					(R = R && R.length > 0),
+						(R || B === !0 || (M === !0 && B !== !1)) === !0 &&
+							(s = y + s + y),
+						(c += s);
+				} else if (s) {
+					if (typeof s != "string")
+						return [
+							Error(
+								`Formatter must return a string, null or undefined, got ${JSON.stringify(s)}`,
+							),
+						];
+					const R = d.length && s.indexOf(d) >= 0,
+						k = y !== "" && s.indexOf(y) >= 0,
+						U = s.indexOf(w) >= 0 && w !== y,
+						wr = s.indexOf(pr) >= 0,
+						xr = M && typeof x == "string";
+					let C =
+						D &&
+						D.filter((F) =>
+							typeof F == "string"
+								? s.indexOf(F) !== -1
+								: F.test(s),
+						);
+					if (((C = C && C.length > 0), dr))
+						switch (s[0]) {
+							case "=":
+							case "+":
+							case "-":
+							case "@":
+							case "	":
+							case "\r":
+							case "＝":
+							case "＋":
+							case "－":
+							case "＠":
+								s = `'${s}`;
+								break;
 						}
-						if (k === !0) {
-							const F = new RegExp(y, "g");
-							s = s.replace(F, w + y);
-						}
-						V === !0 && (s = y + s + y), (c += s);
-					} else
-						(B === !0 || (x === "" && M === !0 && B !== !1)) &&
-							(c += y + y);
-					a !== u.length - 1 && (c += d);
-				}
-				return [void 0, c];
-			},
-			bom: function (i) {
-				this.options.bom === !0 && i(ue);
-			},
-			headers: function (i) {
-				if (
-					this.options.header === !1 ||
-					this.options.columns === void 0
-				)
-					return;
-				let t,
-					o = this.options.columns.map((u) => u.header);
-				if (
-					(this.options.eof
-						? (([t, o] = this.stringify(o, !0)),
-							(o += this.options.record_delimiter))
-						: ([t, o] = this.stringify(o)),
-					t)
-				)
-					return t;
-				i(o);
-			},
-			__cast: function (i, t) {
-				const o = typeof i;
-				try {
-					return o === "string"
-						? [void 0, this.options.cast.string(i, t)]
-						: o === "bigint"
-							? [void 0, this.options.cast.bigint(i, t)]
-							: o === "number"
-								? [void 0, this.options.cast.number(i, t)]
-								: o === "boolean"
-									? [void 0, this.options.cast.boolean(i, t)]
-									: i instanceof Date
-										? [void 0, this.options.cast.date(i, t)]
-										: o === "object" && i !== null
-											? [
-													void 0,
-													this.options.cast.object(
-														i,
-														t,
-													),
-												]
-											: [void 0, i, i];
-				} catch (u) {
-					return [u];
-				}
-			},
-		};
-	},
-	se = function (n, r = {}) {
+					const V = k === !0 || R || wr || hr || xr || C;
+					if (V === !0 && U === !0) {
+						const F =
+							w === "\\"
+								? new RegExp(w + w, "g")
+								: new RegExp(w, "g");
+						s = s.replace(F, w + w);
+					}
+					if (k === !0) {
+						const F = new RegExp(y, "g");
+						s = s.replace(F, w + y);
+					}
+					V === !0 && (s = y + s + y), (c += s);
+				} else
+					(B === !0 || (x === "" && M === !0 && B !== !1)) &&
+						(c += y + y);
+				a !== u.length - 1 && (c += d);
+			}
+			return [void 0, c];
+		},
+		bom: function (i) {
+			this.options.bom === !0 && i(ue);
+		},
+		headers: function (i) {
+			if (this.options.header === !1 || this.options.columns === void 0)
+				return;
+			let t,
+				o = this.options.columns.map((u) => u.header);
+			if (
+				(this.options.eof
+					? (([t, o] = this.stringify(o, !0)),
+						(o += this.options.record_delimiter))
+					: ([t, o] = this.stringify(o)),
+				t)
+			)
+				return t;
+			i(o);
+		},
+		__cast: function (i, t) {
+			const o = typeof i;
+			try {
+				return o === "string"
+					? [void 0, this.options.cast.string(i, t)]
+					: o === "bigint"
+						? [void 0, this.options.cast.bigint(i, t)]
+						: o === "number"
+							? [void 0, this.options.cast.number(i, t)]
+							: o === "boolean"
+								? [void 0, this.options.cast.boolean(i, t)]
+								: i instanceof Date
+									? [void 0, this.options.cast.date(i, t)]
+									: o === "object" && i !== null
+										? [
+												void 0,
+												this.options.cast.object(i, t),
+											]
+										: [void 0, i, i];
+			} catch (u) {
+				return [u];
+			}
+		},
+	}),
+	se = (n, r = {}) => {
 		const e = [],
 			[i, t] = lr(r);
 		if (i !== void 0) throw i;
 		const c = fe(t, { stop: !1 }, { records: 0 });
 		for (const a of n) {
-			const l = c.__transform(a, function (h) {
+			const l = c.__transform(a, (h) => {
 				e.push(h);
 			});
 			if (l !== void 0) throw l;

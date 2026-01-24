@@ -201,15 +201,11 @@ function setupMockApi() {
 						headers: { "Content-Type": "application/json" },
 					},
 				);
-			} else {
-				return new Response(
-					JSON.stringify({ error: "File not found" }),
-					{
-						status: 404,
-						headers: { "Content-Type": "application/json" },
-					},
-				);
 			}
+			return new Response(JSON.stringify({ error: "File not found" }), {
+				status: 404,
+				headers: { "Content-Type": "application/json" },
+			});
 		}
 
 		// Intercept workspace file download API
@@ -231,15 +227,11 @@ function setupMockApi() {
 						"Content-Disposition": `attachment; filename="${path.split("/").pop()}"`,
 					},
 				});
-			} else {
-				return new Response(
-					JSON.stringify({ error: "File not found" }),
-					{
-						status: 404,
-						headers: { "Content-Type": "application/json" },
-					},
-				);
 			}
+			return new Response(JSON.stringify({ error: "File not found" }), {
+				status: 404,
+				headers: { "Content-Type": "application/json" },
+			});
 		}
 
 		// Intercept config API endpoints
@@ -298,14 +290,13 @@ function setupMockApi() {
 					status: 200,
 					headers: { "Content-Type": "application/json" },
 				});
-			} else {
-				// Get config
-				const config = mockConfigs[configType] || {};
-				return new Response(JSON.stringify(config), {
-					status: 200,
-					headers: { "Content-Type": "application/json" },
-				});
 			}
+			// Get config
+			const config = mockConfigs[configType] || {};
+			return new Response(JSON.stringify(config), {
+				status: 200,
+				headers: { "Content-Type": "application/json" },
+			});
 		}
 
 		// For all other requests, use the original fetch
