@@ -21,14 +21,16 @@ const __vite__mapDeps = (
 			"chunks/Preview-of7xUcD9.js",
 		]),
 ) => i.map((i) => d[i]);
+
 import {
 	a as ae,
-	_ as x,
 	b as be,
-	c as we,
-	d as K,
 	g as Ee,
+	d as K,
+	c as we,
+	_ as x,
 } from "./sidepanel-DjwwbR2c.js";
+
 function Te(g, c) {
 	for (var S = 0; S < c.length; S++) {
 		const b = c[S];
@@ -107,8 +109,7 @@ function me() {
 				_ !== Object.keys(p).length)
 			)
 				return !1;
-			for (o = _; o-- !== 0; )
-				if (!Object.prototype.hasOwnProperty.call(p, y[o])) return !1;
+			for (o = _; o-- !== 0; ) if (!Object.hasOwn(p, y[o])) return !1;
 			if (g && i instanceof Element) return !1;
 			for (o = _; o-- !== 0; )
 				if (
@@ -126,7 +127,7 @@ function me() {
 		return i !== i && p !== p;
 	}
 	return (
-		(W = function (p, _) {
+		(W = (p, _) => {
 			try {
 				return v(p, _);
 			} catch (o) {
@@ -147,12 +148,12 @@ var X, le;
 function Se() {
 	if (le) return X;
 	(le = 1),
-		(X = function (v, i, p) {
+		(X = (v, i, p) => {
 			var _ = document.head || document.getElementsByTagName("head")[0],
 				o = document.createElement("script");
 			typeof i == "function" && ((p = i), (i = {})),
 				(i = i || {}),
-				(p = p || function () {}),
+				(p = p || (() => {})),
 				(o.type = i.type || "text/javascript"),
 				(o.charset = i.charset || "utf8"),
 				(o.async = "async" in i ? !!i.async : !0),
@@ -186,9 +187,7 @@ var Y, ue;
 function ve() {
 	if (ue) return Y;
 	ue = 1;
-	var g = function (s) {
-		return c(s) && !S(s);
-	};
+	var g = (s) => c(s) && !S(s);
 	function c(a) {
 		return !!a && typeof a == "object";
 	}
@@ -208,9 +207,7 @@ function ve() {
 		return s.clone !== !1 && s.isMergeableObject(a) ? P(p(a), a, s) : a;
 	}
 	function o(a, s, r) {
-		return a.concat(s).map(function (n) {
-			return _(n, r);
-		});
+		return a.concat(s).map((n) => _(n, r));
 	}
 	function y(a, s) {
 		if (!s.customMerge) return P;
@@ -219,9 +216,9 @@ function ve() {
 	}
 	function L(a) {
 		return Object.getOwnPropertySymbols
-			? Object.getOwnPropertySymbols(a).filter(function (s) {
-					return Object.propertyIsEnumerable.call(a, s);
-				})
+			? Object.getOwnPropertySymbols(a).filter((s) =>
+					Object.propertyIsEnumerable.call(a, s),
+				)
 			: [];
 	}
 	function e(a) {
@@ -237,20 +234,17 @@ function ve() {
 	function O(a, s) {
 		return (
 			h(a, s) &&
-			!(
-				Object.hasOwnProperty.call(a, s) &&
-				Object.propertyIsEnumerable.call(a, s)
-			)
+			!(Object.hasOwn(a, s) && Object.propertyIsEnumerable.call(a, s))
 		);
 	}
 	function j(a, s, r) {
 		var n = {};
 		return (
 			r.isMergeableObject(a) &&
-				e(a).forEach(function (u) {
+				e(a).forEach((u) => {
 					n[u] = _(a[u], r);
 				}),
-			e(s).forEach(function (u) {
+			e(s).forEach((u) => {
 				O(a, u) ||
 					(h(a, u) && r.isMergeableObject(s[u])
 						? (n[u] = y(u, r)(a[u], s[u], r))
@@ -269,12 +263,10 @@ function ve() {
 			d = n === u;
 		return d ? (n ? r.arrayMerge(a, s, r) : j(a, s, r)) : _(s, r);
 	}
-	P.all = function (s, r) {
+	P.all = (s, r) => {
 		if (!Array.isArray(s))
 			throw new Error("first argument should be an array");
-		return s.reduce(function (n, u) {
-			return P(n, u, r);
-		}, {});
+		return s.reduce((n, u) => P(n, u, r), {});
 	};
 	var R = P;
 	return (Y = R), Y;
@@ -294,7 +286,7 @@ function $() {
 		},
 		_ = (l, m, I, U) => {
 			if ((m && typeof m == "object") || typeof m == "function")
-				for (let k of b(m))
+				for (const k of b(m))
 					!i.call(l, k) &&
 						k !== I &&
 						c(l, k, {
@@ -347,7 +339,7 @@ function $() {
 		if (I) {
 			const U = I[1];
 			if (U.match(a)) return n(U);
-			if (s.test(U)) return parseInt(U);
+			if (s.test(U)) return Number.parseInt(U);
 		}
 	}
 	function n(l) {
@@ -355,9 +347,9 @@ function $() {
 			I = a.exec(l);
 		for (; I !== null; ) {
 			const [, U, k] = I;
-			k === "h" && (m += parseInt(U, 10) * 60 * 60),
-				k === "m" && (m += parseInt(U, 10) * 60),
-				k === "s" && (m += parseInt(U, 10)),
+			k === "h" && (m += Number.parseInt(U, 10) * 60 * 60),
+				k === "m" && (m += Number.parseInt(U, 10) * 60),
+				k === "s" && (m += Number.parseInt(U, 10)),
 				(I = a.exec(l));
 		}
 		return m;
@@ -388,7 +380,7 @@ function $() {
 					: null;
 	}
 	const D = {},
-		w = function (m, I, U = null, k = () => !0, q = h.default) {
+		w = (m, I, U = null, k = () => !0, q = h.default) => {
 			const F = C(I);
 			return F && k(F)
 				? Promise.resolve(F)
@@ -403,7 +395,7 @@ function $() {
 						};
 						if (U) {
 							const V = window[U];
-							window[U] = function () {
+							window[U] = () => {
 								V && V(), ie(C(I));
 							};
 						}
@@ -474,7 +466,7 @@ function Ae() {
 		},
 		i = (t, f, N, H) => {
 			if ((f && typeof f == "object") || typeof f == "function")
-				for (let z of S(f))
+				for (const z of S(f))
 					!b.call(t, z) &&
 						z !== N &&
 						g(t, z, {
@@ -575,7 +567,7 @@ function Re() {
 		},
 		i = (e, h, O, j) => {
 			if ((h && typeof h == "object") || typeof h == "function")
-				for (let P of S(h))
+				for (const P of S(h))
 					!b.call(e, P) &&
 						P !== O &&
 						g(e, P, {
@@ -747,11 +739,7 @@ function Re() {
 		];
 	return Q;
 }
-var ye =
-	Number.isNaN ||
-	function (c) {
-		return typeof c == "number" && c !== c;
-	};
+var ye = Number.isNaN || ((c) => typeof c == "number" && c !== c);
 function Me(g, c) {
 	return !!(g === c || (ye(g) && ye(c)));
 }
@@ -799,7 +787,7 @@ function Oe() {
 		},
 		_ = (M, C, D, w) => {
 			if ((C && typeof C == "object") || typeof C == "function")
-				for (let E of b(C))
+				for (const E of b(C))
 					!i.call(M, E) &&
 						E !== D &&
 						c(M, E, {
@@ -1026,7 +1014,7 @@ function je() {
 		},
 		o = (r, n, u, d) => {
 			if ((n && typeof n == "object") || typeof n == "function")
-				for (let T of b(n))
+				for (const T of b(n))
 					!i.call(r, T) &&
 						T !== u &&
 						c(r, T, {
@@ -1302,7 +1290,7 @@ function Ue() {
 		},
 		o = (w, E, A, t) => {
 			if ((E && typeof E == "object") || typeof E == "function")
-				for (let f of b(E))
+				for (const f of b(E))
 					!i.call(w, f) &&
 						f !== A &&
 						c(w, f, {
@@ -1535,7 +1523,7 @@ function Ne() {
 		},
 		_ = (P, R, a, s) => {
 			if ((R && typeof R == "object") || typeof R == "function")
-				for (let r of b(R))
+				for (const r of b(R))
 					!i.call(P, r) &&
 						r !== a &&
 						c(P, r, {

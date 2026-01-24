@@ -1,5 +1,6 @@
-import { a as F, g as K } from "./sidepanel-DjwwbR2c.js";
 import { r as V, a as W } from "./index-7KKzZJbI.js";
+import { a as F, g as K } from "./sidepanel-DjwwbR2c.js";
+
 function Y(l, a) {
 	for (var p = 0; p < a.length; p++) {
 		const s = a[p];
@@ -44,7 +45,7 @@ function $() {
 		},
 		v = (t, e, r, _) => {
 			if ((e && typeof e == "object") || typeof e == "function")
-				for (let o of s(e))
+				for (const o of s(e))
 					!c.call(t, o) &&
 						o !== r &&
 						a(t, o, {

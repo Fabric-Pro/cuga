@@ -13,8 +13,8 @@ const BROWSERGYM_VISIBILITY_ATTRIBUTE = "data-browsergym-visibility";
 
 export class FrameMarkElementsModule {
 	// Class state
-	private elementIdCounter: number = 0;
-	private isInitialized: boolean = false;
+	private elementIdCounter = 0;
+	private isInitialized = false;
 
 	/**
 	 * Start the content script module
@@ -108,7 +108,7 @@ export class FrameMarkElementsModule {
 		const rect = element.getBoundingClientRect();
 
 		// Basic visibility score based on opacity and size
-		let score = parseFloat(style.opacity) || 1;
+		let score = Number.parseFloat(style.opacity) || 1;
 
 		// Adjust score based on element size
 		const area = rect.width * rect.height;
@@ -441,9 +441,8 @@ export class FrameMarkElementsModule {
 
 				if (activeElement.shadowRoot) {
 					return getActiveElement(activeElement.shadowRoot);
-				} else {
-					return activeElement;
 				}
+				return activeElement;
 			};
 
 			const focusedElement = getActiveElement(document);
@@ -518,7 +517,7 @@ export class FrameMarkElementsModule {
 							});
 							break;
 
-						case "mark_elements":
+						case "mark_elements": {
 							// Always remove existing marks before creating new ones
 							this.unmarkElements();
 
@@ -533,6 +532,7 @@ export class FrameMarkElementsModule {
 								warnings: warnings,
 							});
 							break;
+						}
 
 						case "unmark_elements":
 							this.unmarkElements();
@@ -541,13 +541,14 @@ export class FrameMarkElementsModule {
 							});
 							break;
 
-						case "get_focused_element_bid":
+						case "get_focused_element_bid": {
 							const focusedBid = this.getFocusedElementBid();
 							sendResponse({
 								type: "success",
 								data: focusedBid,
 							});
 							break;
+						}
 
 						case "get_element_rect": {
 							try {
@@ -582,7 +583,7 @@ export class FrameMarkElementsModule {
 							break;
 						}
 
-						case "extract_page_content":
+						case "extract_page_content": {
 							const content = request.data?.asText
 								? this.extractPageContentAsText()
 								: this.extractPageContent();
@@ -591,6 +592,7 @@ export class FrameMarkElementsModule {
 								data: content,
 							});
 							break;
+						}
 
 						case "extract_dom_tree":
 							try {

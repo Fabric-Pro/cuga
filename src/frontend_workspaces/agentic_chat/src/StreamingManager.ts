@@ -1,5 +1,5 @@
+import type { ChatInstance } from "@carbon/ai-chat";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
-import { ChatInstance } from "@carbon/ai-chat";
 import { API_BASE_URL } from "./constants";
 
 // Configuration constants

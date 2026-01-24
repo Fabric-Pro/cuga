@@ -1,6 +1,6 @@
-import { defineConfig, ViteUserConfig } from "vitest/config";
 import react from "@vitejs/plugin-react-swc";
 import * as path from "path";
+import { defineConfig, type ViteUserConfig } from "vitest/config";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {

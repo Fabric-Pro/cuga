@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
 import { marked } from "marked";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 
 // Simple ChatInstance interface (no Carbon dependency)
 interface ChatInstance {
@@ -11,19 +11,19 @@ interface ChatInstance {
 }
 import "./CardManager.css";
 import "./CustomResponseStyles.css";
+import ActionAgent from "./action_agent";
+import ActionStatusDashboard from "./action_status_component";
+import AppAnalyzerComponent from "./app_analyzer_component";
+import CoderAgentOutput from "./coder_agent_output";
+import { FollowupAction } from "./Followup";
+import SingleExpandableContent from "./generic_component";
+import QaAgentComponent from "./qa_agent";
+import { fetchStreamingData } from "./StreamingWorkflow";
+import ShortlisterComponent from "./shortlister";
+import ToolCallFlowDisplay from "./ToolReview";
+import TaskDecompositionComponent from "./task_decomposition";
 // Import components from CustomResponseExample
 import TaskStatusDashboard from "./task_status_component";
-import ActionStatusDashboard from "./action_status_component";
-import CoderAgentOutput from "./coder_agent_output";
-import AppAnalyzerComponent from "./app_analyzer_component";
-import TaskDecompositionComponent from "./task_decomposition";
-import ShortlisterComponent from "./shortlister";
-import SingleExpandableContent from "./generic_component";
-import ActionAgent from "./action_agent";
-import QaAgentComponent from "./qa_agent";
-import { FollowupAction } from "./Followup";
-import { fetchStreamingData } from "./StreamingWorkflow";
-import ToolCallFlowDisplay from "./ToolReview";
 
 interface Step {
 	id: string;
@@ -511,9 +511,10 @@ const CardManager: React.FC<CardManagerProps> = ({ chatInstance }) => {
 				}
 				return "I'm analyzing the task structure and planning the execution approach.";
 
-			case "TaskDecompositionAgent":
+			case "TaskDecompositionAgent": {
 				const taskCount = parsedContent.task_decomposition?.length || 0;
 				return `I've broken down your request into <span style="color:${HIGHLIGHT_COLOR}; font-weight: 600;">${taskCount} manageable steps</span>. Each step is designed to work with specific applications and accomplish a specific part of your overall goal.`;
+			}
 
 			case "APIPlannerAgent":
 				if (
@@ -525,7 +526,8 @@ const CardManager: React.FC<CardManagerProps> = ({ chatInstance }) => {
 					const actionType = parsedContent.action;
 					if (actionType === "CoderAgent") {
 						return `I'm preparing to write code for you. The task involves: <span style="color:${HIGHLIGHT_COLOR}; font-weight: 600;">${parsedContent.action_input_coder_agent?.task_description || "Code generation task"}</span>`;
-					} else if (actionType === "ApiShortlistingAgent") {
+					}
+					if (actionType === "ApiShortlistingAgent") {
 						const taskDesc =
 							parsedContent.action_input_shortlisting_agent
 								?.task_description;
@@ -537,7 +539,8 @@ const CardManager: React.FC<CardManagerProps> = ({ chatInstance }) => {
 							return `I'm analyzing available APIs, <span style="color:${HIGHLIGHT_COLOR}; font-weight:500;">${preview}</span>`;
 						}
 						return `I'm analyzing available APIs to find the best options for your request. This will help me understand what tools are available to accomplish your task.`;
-					} else if (actionType === "ConcludeTask") {
+					}
+					if (actionType === "ConcludeTask") {
 						const taskDesc =
 							parsedContent.action_input_conclude_task
 								?.final_response;
@@ -618,7 +621,7 @@ const CardManager: React.FC<CardManagerProps> = ({ chatInstance }) => {
 					return "I'm waiting for your input to continue. Please review the suggested action and let me know how you'd like to proceed.";
 				}
 				return "I'm preparing suggestions for your next action.";
-			case "APICodePlannerAgent":
+			case "APICodePlannerAgent": {
 				const contentPreview =
 					typeof parsedContent === "string"
 						? parsedContent
@@ -628,6 +631,7 @@ const CardManager: React.FC<CardManagerProps> = ({ chatInstance }) => {
 						? contentPreview.substring(0, 80) + "..."
 						: contentPreview;
 				return `I've generated a plan for the coding agent to follow. Plan preview: <span style="color:${HIGHLIGHT_COLOR}; font-weight:500;">${preview}</span>`;
+			}
 			default:
 				return "I'm processing your request and working on the next step in the workflow.";
 		}
@@ -706,7 +710,7 @@ const CardManager: React.FC<CardManagerProps> = ({ chatInstance }) => {
 				} else {
 					parsedContent = step.content; // already an object
 				}
-				let outputElements = [];
+				const outputElements = [];
 				if (
 					parsedContent &&
 					parsedContent.additional_data &&
@@ -859,7 +863,7 @@ const CardManager: React.FC<CardManagerProps> = ({ chatInstance }) => {
 							);
 						}
 						break;
-					default:
+					default: {
 						const isJSONLike =
 							parsedContent !== null &&
 							(typeof parsedContent === "object" ||
@@ -883,6 +887,7 @@ const CardManager: React.FC<CardManagerProps> = ({ chatInstance }) => {
 								content={parsedContent}
 							/>
 						);
+					}
 				}
 
 				// Add main element to outputElements if it exists
@@ -934,7 +939,7 @@ const CardManager: React.FC<CardManagerProps> = ({ chatInstance }) => {
 						gap: "8px",
 					}}
 				>
-					<div className="w-4 h-4 border-2 border-blue-200 border-t-blue-500 rounded-full animate-spin"></div>
+					<div className="w-4 h-4 border-2 border-blue-200 border-t-blue-500 rounded-full animate-spin" />
 					<span>Waiting for your input</span>
 				</span>
 			),
@@ -996,7 +1001,7 @@ const CardManager: React.FC<CardManagerProps> = ({ chatInstance }) => {
 		!hasErrorStep;
 
 	// Helper function to render a single step card
-	const renderStepCard = (step: Step, isCurrentStep: boolean = false) => {
+	const renderStepCard = (step: Step, isCurrentStep = false) => {
 		// Parse content for description
 		let parsedContent;
 		try {

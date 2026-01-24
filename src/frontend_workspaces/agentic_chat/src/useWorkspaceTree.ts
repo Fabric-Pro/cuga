@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export interface FileNode {
 	name: string;
@@ -7,7 +7,7 @@ export interface FileNode {
 	children?: FileNode[];
 }
 
-export function useWorkspaceTree(pollInterval: number = 15000) {
+export function useWorkspaceTree(pollInterval = 15000) {
 	const [fileTree, setFileTree] = useState<FileNode[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);

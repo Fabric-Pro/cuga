@@ -334,7 +334,7 @@
     </div>
 
     <script>
-        let graph = null;
+        const graph = null;
         let svg = null;
         let simulation = null;
         let nodes = [];
@@ -376,11 +376,11 @@
         }
 
         // File input handler
-        document.getElementById('fileInput').addEventListener('change', function(event) {
+        document.getElementById('fileInput').addEventListener('change', (event) => {
             const file = event.target.files[0];
             if (file && file.type === 'application/json') {
                 const reader = new FileReader();
-                reader.onload = function(e) {
+                reader.onload = (e) => {
                     try {
                         const data = JSON.parse(e.target.result);
                         loadGraph(data);
@@ -614,8 +614,8 @@
 
         function centerGraph() {
             if (svg) {
-                const width = parseInt(svg.attr("width"));
-                const height = parseInt(svg.attr("height"));
+                const width = Number.parseInt(svg.attr("width"));
+                const height = Number.parseInt(svg.attr("height"));
 
                 svg.transition().duration(750).call(
                     d3.zoom().transform,
@@ -1014,7 +1014,7 @@
     </div>
 
     <script>
-        let graph = null;
+        const graph = null;
         let svg = null;
         let simulation = null;
         let nodes = [];
@@ -1056,11 +1056,11 @@
         }
 
         // File input handler
-        document.getElementById('fileInput').addEventListener('change', function(event) {
+        document.getElementById('fileInput').addEventListener('change', (event) => {
             const file = event.target.files[0];
             if (file && file.type === 'application/json') {
                 const reader = new FileReader();
-                reader.onload = function(e) {
+                reader.onload = (e) => {
                     try {
                         const data = JSON.parse(e.target.result);
                         loadGraph(data);
@@ -1294,8 +1294,8 @@
 
         function centerGraph() {
             if (svg) {
-                const width = parseInt(svg.attr("width"));
-                const height = parseInt(svg.attr("height"));
+                const width = Number.parseInt(svg.attr("width"));
+                const height = Number.parseInt(svg.attr("height"));
 
                 svg.transition().duration(750).call(
                     d3.zoom().transform,

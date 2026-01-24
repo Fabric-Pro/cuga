@@ -1,9 +1,9 @@
 import "../symbol.dispose.polyfill";
 import log from "loglevel";
 import logPrefix from "loglevel-plugin-prefix";
-import { Module } from "runtime";
-import { DOMTreeModule } from "../content/page_analysis/dom_tree_module";
+import type { Module } from "runtime";
 import { FrameMarkElementsModule } from "../content/frame.mark.elements";
+import { DOMTreeModule } from "../content/page_analysis/dom_tree_module";
 
 export default defineContentScript({
 	matches: ["<all_urls>"],

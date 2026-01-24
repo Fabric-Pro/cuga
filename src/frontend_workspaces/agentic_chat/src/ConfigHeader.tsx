@@ -1,26 +1,26 @@
-import React, { useState, useEffect } from "react";
 import {
-	Settings,
-	Sidebar,
-	Folder,
 	BookOpen,
 	Brain,
+	Cpu,
+	Folder,
+	Menu,
+	Settings,
+	Shield,
+	Sidebar,
+	UserCog,
 	Users,
 	Wrench,
-	Cpu,
-	Shield,
-	UserCog,
-	Menu,
 	X,
 } from "lucide-react";
+import React, { useEffect, useState } from "react";
 import "./ConfigHeader.css";
-import MemoryConfig from "./MemoryConfig";
+import AgentHumanConfig from "./AgentHumanConfig";
 import KnowledgeConfig from "./KnowledgeConfig";
-import ToolsConfig from "./ToolsConfig";
-import SubAgentsConfig from "./SubAgentsConfig";
+import MemoryConfig from "./MemoryConfig";
 import ModelConfig from "./ModelConfig";
 import PoliciesConfig from "./PoliciesConfig";
-import AgentHumanConfig from "./AgentHumanConfig";
+import SubAgentsConfig from "./SubAgentsConfig";
+import ToolsConfig from "./ToolsConfig";
 
 interface ConfigHeaderProps {
 	onToggleLeftSidebar: () => void;

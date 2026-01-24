@@ -1,11 +1,10 @@
 import "../symbol.dispose.polyfill";
-import browser from "webextension-polyfill";
 import log from "loglevel";
 import logPrefix from "loglevel-plugin-prefix";
-import { SidePanel } from "../worker/sidepanel.module";
-
+import browser from "webextension-polyfill";
 import { defineBackground } from "wxt/utils/define-background";
 import { HttpStreamModule } from "../worker/http.stream.module";
+import { SidePanel } from "../worker/sidepanel.module";
 
 export default defineBackground(() => {
 	logPrefix.reg(log);

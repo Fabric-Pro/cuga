@@ -5,7 +5,7 @@
  * Original code licensed under MIT License
  */
 
-import { DomCache } from "./DomCache";
+import type { DomCache } from "./DomCache";
 
 export class NodeHelper {
 	/**
@@ -116,7 +116,7 @@ export class NodeHelper {
 			return false;
 		}
 
-		let isInteractiveCursor = doesElementHaveInteractivePointer(element);
+		const isInteractiveCursor = doesElementHaveInteractivePointer(element);
 
 		// Genius fix for almost all interactive elements
 		if (isInteractiveCursor) {

@@ -239,7 +239,7 @@
 
   <script>
     let combined = null;
-    let charts = {};
+    const charts = {};
 
     const COLORS = {
       // Mode colors
@@ -610,7 +610,7 @@
         const times = runs.map(r => r.full_execution_time).filter(t => t > 0);
         if (times.length <= 1) return 0;
         const avg = avgExecTimes[idx];
-        const variance = times.reduce((sum, t) => sum + Math.pow(t - avg, 2), 0) / times.length;
+        const variance = times.reduce((sum, t) => sum + (t - avg) ** 2, 0) / times.length;
         return Math.sqrt(variance);
       });
 

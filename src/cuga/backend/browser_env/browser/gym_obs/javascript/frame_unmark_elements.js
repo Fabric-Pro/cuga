@@ -16,11 +16,11 @@
 		// add shadowDOM elements to the elements array, in such a way that order is preserved
 		// TODO: do we really need the order preserved?
 		if (elem.shadowRoot !== null) {
-			elements = new Array(
+			elements = [
 				...Array.prototype.slice.call(elements, 0, i + 1),
 				...Array.from(elem.shadowRoot.querySelectorAll("*")),
 				...Array.prototype.slice.call(elements, i + 1),
-			);
+			];
 		}
 		i++;
 		// Hack: remove custom data stored in ARIA attributes
@@ -31,10 +31,10 @@
 };
 
 function pop_bid_from_attribute(elem, attr) {
-	let bid_regex = /^browsergym_id[^\s]*\s/;
+	const bid_regex = /^browsergym_id[^\s]*\s/;
 	if (elem.hasAttribute(attr)) {
-		let content = elem.getAttribute(attr);
-		let original_content = content.replace(bid_regex, "");
+		const content = elem.getAttribute(attr);
+		const original_content = content.replace(bid_regex, "");
 		if (original_content) {
 			elem.setAttribute(attr, original_content);
 		} else {

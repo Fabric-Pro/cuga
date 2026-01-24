@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { X, Save } from "lucide-react";
+import { Save, X } from "lucide-react";
+import React, { useEffect, useState } from "react";
 import "./ConfigModal.css";
 
 interface ModelConfigData {
@@ -124,7 +124,7 @@ export default function ModelConfig({ onClose }: ModelConfigProps) {
 									onChange={(e) =>
 										setConfig({
 											...config,
-											temperature: parseFloat(
+											temperature: Number.parseFloat(
 												e.target.value,
 											),
 										})
@@ -144,7 +144,9 @@ export default function ModelConfig({ onClose }: ModelConfigProps) {
 									onChange={(e) =>
 										setConfig({
 											...config,
-											maxTokens: parseInt(e.target.value),
+											maxTokens: Number.parseInt(
+												e.target.value,
+											),
 										})
 									}
 									min="1"
@@ -163,7 +165,9 @@ export default function ModelConfig({ onClose }: ModelConfigProps) {
 									onChange={(e) =>
 										setConfig({
 											...config,
-											topP: parseFloat(e.target.value),
+											topP: Number.parseFloat(
+												e.target.value,
+											),
 										})
 									}
 								/>

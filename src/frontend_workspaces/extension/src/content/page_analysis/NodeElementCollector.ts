@@ -5,10 +5,10 @@
  * Original code licensed under MIT License
  */
 
-import { CachedXPathBuilder } from "./CachedXPathBuilder";
-import { NodeHelper } from "./NodeHelper";
-import { DomCache } from "./DomCache";
-import { NodeData, CheckPoint } from "./types";
+import type { CachedXPathBuilder } from "./CachedXPathBuilder";
+import type { DomCache } from "./DomCache";
+import type { NodeHelper } from "./NodeHelper";
+import type { CheckPoint, NodeData } from "./types";
 
 export class NodeElementCollector {
 	/**
@@ -31,7 +31,7 @@ export class NodeElementCollector {
 			// Extract trailing numeric part (supports patterns like "frame:123").
 			const numericMatch = existingIdAttr.match(/(\d+)(?!.*\d)/);
 			if (numericMatch) {
-				domTreeId = parseInt(numericMatch[1], 10);
+				domTreeId = Number.parseInt(numericMatch[1], 10);
 
 				// Ensure global counter is at least this value to avoid duplicates.
 				const currentCounter = (window as any)[globalKey] ?? 0;
@@ -159,7 +159,7 @@ export class NodeElementCollector {
 		}
 
 		// Find the correct document context and root element
-		let doc = element.ownerDocument;
+		const doc = element.ownerDocument;
 
 		// If we're in an iframe, elements are considered top by default
 		if (doc !== window.document) {

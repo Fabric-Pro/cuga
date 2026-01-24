@@ -132,7 +132,7 @@
 
 
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', () => {
             // --- STATE MANAGEMENT ---
             let accounts = [
                 { id: 1, name: 'Innovate Corp LLC', revenue: 250000, state: 'CA', industry: 'Technology', status: 'Active' },
@@ -309,7 +309,7 @@
                 const id = accountIdInput.value;
                 const accountData = {
                     name: accountNameInput.value,
-                    revenue: parseFloat(accountRevenueInput.value),
+                    revenue: Number.parseFloat(accountRevenueInput.value),
                     state: accountStateInput.value,
                     industry: accountIndustryInput.value,
                     status: accountStatusInput.value,
@@ -371,14 +371,14 @@
             cancelDeleteBtn.addEventListener('click', hideDeleteConfirmModal);
 
 
-            tableBody.addEventListener('click', function(e) {
+            tableBody.addEventListener('click', (e) => {
                 if (e.target.classList.contains('edit-btn')) {
-                    const id = parseInt(e.target.dataset.id);
+                    const id = Number.parseInt(e.target.dataset.id);
                     const account = accounts.find(acc => acc.id === id);
                     showModal(account);
                 }
                 if (e.target.classList.contains('delete-btn')) {
-                    const id = parseInt(e.target.dataset.id);
+                    const id = Number.parseInt(e.target.dataset.id);
                     // (MODIFIED) Show the custom modal instead of the browser confirm
                     showDeleteConfirmModal(id);
                 }

@@ -91,7 +91,7 @@ export default function TaskStatusDashboard({ taskData }) {
 								<div
 									className="bg-green-500 h-1.5 rounded-full transition-all duration-300"
 									style={{ width: `${progressPercentage}%` }}
-								></div>
+								/>
 							</div>
 							<div className="flex gap-1">
 								{subtasks_progress.map((status, index) => (

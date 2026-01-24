@@ -1,4 +1,5 @@
-import { r as l, g as c } from "./sidepanel-DjwwbR2c.js";
+import { g as c, r as l } from "./sidepanel-DjwwbR2c.js";
+
 function g(i, s) {
 	for (var a = 0; a < s.length; a++) {
 		const t = s[a];
@@ -26,10 +27,10 @@ function D() {
 	return (
 		M ||
 			((M = 1),
-			(function (i, s) {
-				(function (a, t) {
+			((i, s) => {
+				((a, t) => {
 					i.exports = t(l());
-				})(y, function (a) {
+				})(y, (a) => {
 					function t(r) {
 						return r && typeof r == "object" && "default" in r
 							? r
@@ -71,9 +72,7 @@ function D() {
 							"Jän._Feb._März_Apr._Mai_Juni_Juli_Aug._Sep._Okt._Nov._Dez.".split(
 								"_",
 							),
-						ordinal: function (r) {
-							return r + ".";
-						},
+						ordinal: (r) => r + ".",
 						weekStart: 1,
 						formats: {
 							LTS: "HH:mm:ss",

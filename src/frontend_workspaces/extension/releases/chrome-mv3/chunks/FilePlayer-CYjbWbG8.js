@@ -1,5 +1,6 @@
-import { a as q, g as G } from "./sidepanel-DjwwbR2c.js";
-import { r as X, a as W } from "./index-7KKzZJbI.js";
+import { a as W, r as X } from "./index-7KKzZJbI.js";
+import { g as G, a as q } from "./sidepanel-DjwwbR2c.js";
+
 function z(u, h) {
 	for (var f = 0; f < h.length; f++) {
 		const p = h[f];
@@ -44,7 +45,7 @@ function J() {
 		},
 		b = (s, e, t, r) => {
 			if ((e && typeof e == "object") || typeof e == "function")
-				for (let o of p(e))
+				for (const o of p(e))
 					!y.call(s, o) &&
 						o !== t &&
 						h(s, o, {
@@ -268,7 +269,7 @@ function J() {
 								this.props.playing,
 							),
 							this.dash.on("error", this.props.onError),
-							parseInt(o) < 3
+							Number.parseInt(o) < 3
 								? this.dash
 										.getDebug()
 										.setLogToBrowserConsole(!1)

@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
-import { X, Plus, Trash2, Save, Upload, Download } from "lucide-react";
 import yaml from "js-yaml";
+import { Download, Plus, Save, Trash2, Upload, X } from "lucide-react";
+import React, { useEffect, useState } from "react";
 import "./ConfigModal.css";
 
 interface Service {

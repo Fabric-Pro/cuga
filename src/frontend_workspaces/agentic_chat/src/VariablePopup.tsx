@@ -1,5 +1,5 @@
-import React from "react";
 import { marked } from "marked";
+import React from "react";
 import "./VariablePopup.css";
 
 interface VariablePopupProps {

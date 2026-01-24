@@ -1,4 +1,5 @@
-import { r as y, g as M } from "./sidepanel-DjwwbR2c.js";
+import { g as M, r as y } from "./sidepanel-DjwwbR2c.js";
+
 function Y(_, d) {
 	for (var i = 0; i < d.length; i++) {
 		const o = d[i];
@@ -26,10 +27,10 @@ function v() {
 	return (
 		p ||
 			((p = 1),
-			(function (_, d) {
-				(function (i, o) {
+			((_, d) => {
+				((i, o) => {
 					_.exports = o(y());
-				})(h, function (i) {
+				})(h, (i) => {
 					function o(e) {
 						return e && typeof e == "object" && "default" in e
 							? e
@@ -93,9 +94,7 @@ function v() {
 							),
 						weekStart: 1,
 						yearStart: 4,
-						ordinal: function (e) {
-							return e + ".";
-						},
+						ordinal: (e) => e + ".",
 						formats: {
 							LT: "H:mm",
 							LTS: "H:mm:ss",

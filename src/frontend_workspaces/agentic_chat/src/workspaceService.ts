@@ -15,7 +15,7 @@ interface WorkspaceData {
 
 class WorkspaceService {
 	private static instance: WorkspaceService;
-	private lastFetchTime: number = 0;
+	private lastFetchTime = 0;
 	private cachedData: WorkspaceData | null = null;
 	private pendingRequest: Promise<WorkspaceData> | null = null;
 	private readonly MIN_INTERVAL_MS = 3000; // 3 seconds minimum between requests
@@ -62,9 +62,7 @@ class WorkspaceService {
 	 * Fetch workspace tree with enforced throttling
 	 * Returns cached data if called too soon after last fetch
 	 */
-	async getWorkspaceTree(
-		forceRefresh: boolean = false,
-	): Promise<WorkspaceData> {
+	async getWorkspaceTree(forceRefresh = false): Promise<WorkspaceData> {
 		const now = Date.now();
 		const timeSinceLastFetch = now - this.lastFetchTime;
 

@@ -1,24 +1,24 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
-	Send,
-	RotateCcw,
 	Bot,
-	User,
-	FileText,
-	Database,
-	Code,
-	Terminal,
-	Cpu,
-	Globe,
-	Settings,
 	ChevronRight,
+	Code,
+	Cpu,
+	Database,
+	FileText,
+	Globe,
+	RotateCcw,
+	Send,
+	Settings,
+	Terminal,
+	User,
 } from "lucide-react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import CardManager from "./CardManager";
+import { DebugPanel } from "./DebugPanel";
+import { exampleUtterances } from "./exampleUtterances";
+import { FollowupSuggestions } from "./FollowupSuggestions";
 import { StopButton } from "./floating/stop_button";
 import { fetchStreamingData } from "./StreamingWorkflow";
-import { DebugPanel } from "./DebugPanel";
-import { FollowupSuggestions } from "./FollowupSuggestions";
-import { exampleUtterances } from "./exampleUtterances";
 import "./CustomChat.css";
 
 interface Message {
@@ -549,7 +549,7 @@ export function CustomChat({
 				const selection = window.getSelection();
 
 				// Find the next text node or position after the chip
-				let nextNode = fileChip.nextSibling;
+				const nextNode = fileChip.nextSibling;
 				if (nextNode && nextNode.nodeType === Node.TEXT_NODE) {
 					range.setStart(nextNode, 0);
 					range.setEnd(nextNode, 0);
@@ -876,11 +876,10 @@ export function CustomChat({
 			if (e.shiftKey) {
 				// Allow new line with Shift+Enter
 				return;
-			} else {
-				// Send message on Enter without Shift
-				e.preventDefault();
-				handleSend();
 			}
+			// Send message on Enter without Shift
+			e.preventDefault();
+			handleSend();
 		}
 	};
 

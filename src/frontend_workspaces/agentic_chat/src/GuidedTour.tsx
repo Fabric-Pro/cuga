@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { X, ChevronLeft, ChevronRight, Check } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, X } from "lucide-react";
+import React, { useCallback, useEffect, useState } from "react";
 import "./GuidedTour.css";
 
 export interface TourStep {

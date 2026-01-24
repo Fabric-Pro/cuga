@@ -4,8 +4,7 @@ var be = (D, I, N) =>
 		? Ae(D, I, { enumerable: !0, configurable: !0, writable: !0, value: N })
 		: (D[I] = N);
 var O = (D, I, N) => be(D, typeof I != "symbol" ? I + "" : I, N);
-var background = (function () {
-	"use strict";
+var background = (() => {
 	typeof Symbol.dispose != "symbol" &&
 		Object.defineProperty(Symbol, "dispose", {
 			configurable: !1,
@@ -21,11 +20,7 @@ var background = (function () {
 				value: Symbol.for("asyncDispose"),
 			});
 	function D(c) {
-		return c &&
-			c.__esModule &&
-			Object.prototype.hasOwnProperty.call(c, "default")
-			? c.default
-			: c;
+		return c && c.__esModule && Object.hasOwn(c, "default") ? c.default : c;
 	}
 	var I = { exports: {} },
 		N = I.exports,
@@ -34,8 +29,8 @@ var background = (function () {
 		return (
 			Q ||
 				((Q = 1),
-				(function (c, t) {
-					(function (e, r) {
+				((c, t) => {
+					((e, r) => {
 						r(c);
 					})(
 						typeof globalThis < "u"
@@ -43,7 +38,7 @@ var background = (function () {
 							: typeof self < "u"
 								? self
 								: N,
-						function (e) {
+						(e) => {
 							var r, s;
 							if (
 								!(
@@ -758,8 +753,9 @@ var background = (function () {
 												n == 1
 													? "argument"
 													: "arguments",
-											p = (n, a) =>
-												function (o, ...h) {
+											p =
+												(n, a) =>
+												(o, ...h) => {
 													if (h.length < a.minArgs)
 														throw new Error(
 															`Expected at least ${a.minArgs} ${T(a.minArgs)} for ${n}(), got ${h.length}`,
@@ -829,11 +825,11 @@ var background = (function () {
 														);
 													},
 												});
-										let m = Function.call.bind(
+										const m = Function.call.bind(
 											Object.prototype.hasOwnProperty,
 										);
 										const b = (n, a = {}, l = {}) => {
-												let o = Object.create(null),
+												const o = Object.create(null),
 													h = {
 														has(C, f) {
 															return (
@@ -864,7 +860,7 @@ var background = (function () {
 																else if (
 																	m(l, f)
 																) {
-																	let U = p(
+																	const U = p(
 																		f,
 																		l[f],
 																	);
@@ -976,7 +972,7 @@ var background = (function () {
 											k = new y((n) =>
 												typeof n != "function"
 													? n
-													: function (l) {
+													: (l) => {
 															const o = b(
 																l,
 																{},
@@ -994,21 +990,20 @@ var background = (function () {
 											M = new y((n) =>
 												typeof n != "function"
 													? n
-													: function (l, o, h) {
+													: (l, o, h) => {
 															let v = !1,
 																C,
 																f = new Promise(
 																	(q) => {
-																		C =
-																			function (
-																				L,
-																			) {
-																				(v =
-																					!0),
-																					q(
-																						L,
-																					);
-																			};
+																		C = (
+																			L,
+																		) => {
+																			(v =
+																				!0),
+																				q(
+																					L,
+																				);
+																		};
 																	},
 																),
 																R;
@@ -1169,11 +1164,11 @@ var background = (function () {
 		return (
 			z ||
 				((z = 1),
-				(function (c) {
-					(function (t, e) {
+				((c) => {
+					((t, e) => {
 						c.exports ? (c.exports = e()) : (t.log = e());
-					})(te, function () {
-						var t = function () {},
+					})(te, () => {
+						var t = () => {},
 							e = "undefined",
 							r =
 								typeof window !== e &&
@@ -1190,12 +1185,11 @@ var background = (function () {
 							try {
 								return Function.prototype.bind.call(i, m);
 							} catch {
-								return function () {
-									return Function.prototype.apply.apply(i, [
+								return () =>
+									Function.prototype.apply.apply(i, [
 										m,
 										arguments,
 									]);
-								};
 							}
 						}
 						function A() {
@@ -1335,27 +1329,23 @@ var background = (function () {
 									SILENT: 5,
 								}),
 								(i.methodFactory = b || T),
-								(i.getLevel = function () {
-									return E ?? M ?? k;
-								}),
-								(i.setLevel = function (o, h) {
-									return (
-										(E = a(o)), h !== !1 && B(E), d.call(i)
-									);
-								}),
-								(i.setDefaultLevel = function (o) {
+								(i.getLevel = () => E ?? M ?? k),
+								(i.setLevel = (o, h) => (
+									(E = a(o)), h !== !1 && B(E), d.call(i)
+								)),
+								(i.setDefaultLevel = (o) => {
 									(M = a(o)), F() || i.setLevel(o, !1);
 								}),
-								(i.resetLevel = function () {
+								(i.resetLevel = () => {
 									(E = null), n(), d.call(i);
 								}),
-								(i.enableAll = function (o) {
+								(i.enableAll = (o) => {
 									i.setLevel(i.levels.TRACE, o);
 								}),
-								(i.disableAll = function (o) {
+								(i.disableAll = (o) => {
 									i.setLevel(i.levels.SILENT, o);
 								}),
-								(i.rebuild = function () {
+								(i.rebuild = () => {
 									if (
 										(g !== i && (k = a(g.getLevel())),
 										d.call(i),
@@ -1368,7 +1358,7 @@ var background = (function () {
 							l != null && (E = a(l)), d.call(i);
 						}
 						(g = new p()),
-							(g.getLogger = function (b) {
+							(g.getLogger = (b) => {
 								if (
 									(typeof b != "symbol" &&
 										typeof b != "string") ||
@@ -1385,17 +1375,13 @@ var background = (function () {
 							});
 						var P = typeof window !== e ? window.log : void 0;
 						return (
-							(g.noConflict = function () {
-								return (
-									typeof window !== e &&
-										window.log === g &&
-										(window.log = P),
-									g
-								);
-							}),
-							(g.getLoggers = function () {
-								return u;
-							}),
+							(g.noConflict = () => (
+								typeof window !== e &&
+									window.log === g &&
+									(window.log = P),
+								g
+							)),
+							(g.getLoggers = () => u),
 							(g.default = g),
 							g
 						);
@@ -1413,51 +1399,44 @@ var background = (function () {
 		return (
 			Z ||
 				((Z = 1),
-				(function (c) {
-					(function (t, e) {
+				((c) => {
+					((t, e) => {
 						c.exports ? (c.exports = e()) : (t.prefix = e(t));
-					})(se, function (t) {
-						var e = function (d) {
+					})(se, (t) => {
+						var e = (d) => {
 								for (
 									var x = 1, T = arguments.length, p;
 									x < T;
 									x++
 								)
 									for (p in arguments[x])
-										Object.prototype.hasOwnProperty.call(
-											arguments[x],
-											p,
-										) && (d[p] = arguments[x][p]);
+										Object.hasOwn(arguments[x], p) &&
+											(d[p] = arguments[x][p]);
 								return d;
 							},
 							r = {
 								template: "[%t] %l:",
-								levelFormatter: function (d) {
-									return d.toUpperCase();
-								},
-								nameFormatter: function (d) {
-									return d || "root";
-								},
-								timestampFormatter: function (d) {
-									return d
+								levelFormatter: (d) => d.toUpperCase(),
+								nameFormatter: (d) => d || "root",
+								timestampFormatter: (d) =>
+									d
 										.toTimeString()
 										.replace(
 											/.*(\d{2}:\d{2}:\d{2}).*/,
 											"$1",
-										);
-								},
+										),
 								format: void 0,
 							},
 							s,
 							u = {},
-							g = function (d) {
+							g = (d) => {
 								if (!d || !d.getLogger)
 									throw new TypeError(
 										"Argument is not a root logger",
 									);
 								s = d;
 							},
-							w = function (d, x) {
+							w = (d, x) => {
 								if (!d || !d.setLevel)
 									throw new TypeError(
 										"Argument is not a logger",
@@ -1471,7 +1450,7 @@ var background = (function () {
 										_ = E.template.indexOf("%t") !== -1,
 										B = E.template.indexOf("%l") !== -1,
 										F = E.template.indexOf("%n") !== -1;
-									return function () {
+									return () => {
 										for (
 											var n = "",
 												a = arguments.length,
@@ -1531,9 +1510,9 @@ var background = (function () {
 						return (
 							t &&
 								((y = t.prefix),
-								(A.noConflict = function () {
-									return t.prefix === A && (t.prefix = y), A;
-								})),
+								(A.noConflict = () => (
+									t.prefix === A && (t.prefix = y), A
+								))),
 							A
 						);
 					});
@@ -1547,14 +1526,11 @@ var background = (function () {
 		return new Promise((t) => setTimeout(t, c));
 	}
 	function le() {
-		return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(
-			/[xy]/g,
-			function (c) {
-				var t = (Math.random() * 16) | 0,
-					e = c === "x" ? t : (t & 3) | 8;
-				return e.toString(16);
-			},
-		);
+		return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+			var t = (Math.random() * 16) | 0,
+				e = c === "x" ? t : (t & 3) | 8;
+			return e.toString(16);
+		});
 	}
 	class ce {
 		constructor() {

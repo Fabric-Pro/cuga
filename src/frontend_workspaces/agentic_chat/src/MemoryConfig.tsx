@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { X, Save, Plus, Trash2 } from "lucide-react";
+import { Plus, Save, Trash2, X } from "lucide-react";
+import React, { useEffect, useState } from "react";
 import "./ConfigModal.css";
 
 interface SavedTrajectory {
@@ -239,7 +239,7 @@ export default function MemoryConfig({ onClose }: MemoryConfigProps) {
 									onChange={(e) =>
 										setConfig({
 											...config,
-											maxMemoryItems: parseInt(
+											maxMemoryItems: Number.parseInt(
 												e.target.value,
 											),
 										})
@@ -523,9 +523,10 @@ export default function MemoryConfig({ onClose }: MemoryConfigProps) {
 											...config,
 											saveAndReuse: {
 												...config.saveAndReuse,
-												minSuccessfulRuns: parseInt(
-													e.target.value,
-												),
+												minSuccessfulRuns:
+													Number.parseInt(
+														e.target.value,
+													),
 											},
 										})
 									}

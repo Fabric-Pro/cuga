@@ -1,15 +1,15 @@
-import React, { useState, useEffect } from "react";
 import {
-	MessageSquare,
-	Database,
 	ChevronLeft,
 	ChevronRight,
+	Database,
+	HelpCircle,
+	Info,
+	MessageSquare,
 	Plus,
 	Trash2,
 	Workflow,
-	Info,
-	HelpCircle,
 } from "lucide-react";
+import React, { useEffect, useState } from "react";
 import "./LeftSidebar.css";
 import VariablesSidebar from "./VariablesSidebar";
 

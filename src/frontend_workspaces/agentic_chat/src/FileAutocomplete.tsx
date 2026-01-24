@@ -1,6 +1,5 @@
-import { useState, useEffect, useRef, useCallback } from "react";
 import { FileText } from "lucide-react";
-import React from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import "./FileAutocomplete.css";
 
 interface FileNode {
@@ -158,7 +157,7 @@ export function FileAutocomplete({
 				return;
 			}
 
-			let currentValue = textarea.value;
+			const currentValue = textarea.value;
 			const lastAtIndex = currentValue.lastIndexOf("@");
 			if (lastAtIndex === -1) {
 				return;
@@ -381,9 +380,8 @@ export function FileAutocomplete({
 						true,
 					);
 				};
-			} else {
-				setTimeout(setupCarbonListeners, 500);
 			}
+			setTimeout(setupCarbonListeners, 500);
 		};
 
 		setupCarbonListeners();

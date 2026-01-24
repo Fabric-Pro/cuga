@@ -1,14 +1,13 @@
-import { ConfigEnv, defineConfig, normalizePath, loadEnv } from "vite";
-import webExtension, { readJsonFile } from "vite-plugin-web-extension";
-import { viteStaticCopy } from "vite-plugin-static-copy";
-import checker from "vite-plugin-checker";
-import dateFormat from "dateformat";
-import path, { resolve } from "path";
 import * as fs from "node:fs/promises";
+import dateFormat from "dateformat";
+import path from "path";
+import { type ConfigEnv, defineConfig, loadEnv, normalizePath } from "vite";
+import { viteStaticCopy } from "vite-plugin-static-copy";
+import webExtension, { readJsonFile } from "vite-plugin-web-extension";
 
 async function replaceInFile(filePath) {
 	try {
-		let data = await fs.readFile(filePath, "utf8");
+		const data = await fs.readFile(filePath, "utf8");
 		const updatedData = data.replace(
 			/_commonjsHelpers/g,
 			"commonjsHelpers",
@@ -29,7 +28,7 @@ async function copyAndDeleteFile(oldFilePath) {
 
 	try {
 		// Copy the file content
-		let data = await fs.readFile(oldFilePath, "utf8");
+		const data = await fs.readFile(oldFilePath, "utf8");
 		await fs.writeFile(newFilePath, data, "utf8");
 
 		// Delete the old file
@@ -112,7 +111,7 @@ function generateManifest(mode: string, env: { [x: string]: string }) {
 function replaceKeysInString(stringValue, env) {
 	const keyIdentifier = /__(\w+)__/g;
 	return stringValue.replace(keyIdentifier, (match, identifier) => {
-		if (env.hasOwnProperty(identifier)) {
+		if (Object.hasOwn(env, identifier)) {
 			let value = env[identifier];
 			if (
 				(typeof value === "string" || value instanceof String) &&
@@ -131,7 +130,7 @@ function replaceKeysInString(stringValue, env) {
 function replaceKeysInHtml(htmlContent, keyValueMap) {
 	const keyIdentifier = /__(\w+)__/g;
 	return htmlContent.replace(keyIdentifier, (match, identifier) => {
-		if (keyValueMap.hasOwnProperty(match)) {
+		if (Object.hasOwn(keyValueMap, match)) {
 			let value = keyValueMap[match];
 
 			if (
@@ -178,7 +177,7 @@ function renameFiles() {
 
 export default defineConfig((config: ConfigEnv) => {
 	const envFileDirectory = path.resolve(__dirname); //.env file directory
-	let env = loadEnv(config.mode, envFileDirectory, "NL2UI");
+	const env = loadEnv(config.mode, envFileDirectory, "NL2UI");
 	console.log("Environment: ");
 	console.log(env);
 	env["NL2UI_LOGOUT_URL"] = `${

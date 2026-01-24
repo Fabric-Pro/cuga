@@ -178,14 +178,14 @@ function P(e, t) {
 			(r.WebKitCSSMatrix
 				? (o = s.m41)
 				: n.length === 16
-					? (o = parseFloat(n[12]))
-					: (o = parseFloat(n[4]))),
+					? (o = Number.parseFloat(n[12]))
+					: (o = Number.parseFloat(n[4]))),
 		t === "y" &&
 			(r.WebKitCSSMatrix
 				? (o = s.m42)
 				: n.length === 16
-					? (o = parseFloat(n[13]))
-					: (o = parseFloat(n[5]))),
+					? (o = Number.parseFloat(n[13]))
+					: (o = Number.parseFloat(n[5]))),
 		o || 0
 	);
 }
@@ -231,7 +231,7 @@ function F(e, t, r) {
 	e.style.setProperty(t, r);
 }
 function _(e) {
-	let { swiper: t, targetPosition: r, side: n } = e;
+	const { swiper: t, targetPosition: r, side: n } = e;
 	const o = a(),
 		s = -t.translate;
 	let l = null,
@@ -372,14 +372,14 @@ function $(e, t, r) {
 	const n = a();
 	return (
 		e[t === "width" ? "offsetWidth" : "offsetHeight"] +
-		parseFloat(
+		Number.parseFloat(
 			n
 				.getComputedStyle(e, null)
 				.getPropertyValue(
 					t === "width" ? "margin-right" : "margin-top",
 				),
 		) +
-		parseFloat(
+		Number.parseFloat(
 			n
 				.getComputedStyle(e, null)
 				.getPropertyValue(

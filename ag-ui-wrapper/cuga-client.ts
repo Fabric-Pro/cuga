@@ -6,11 +6,11 @@
  */
 
 import type {
-	CugaSSEEvent,
+	AICredentials,
+	CugaHealthResponse,
 	CugaQueryRequest,
 	CugaResumeRequest,
-	CugaHealthResponse,
-	AICredentials,
+	CugaSSEEvent,
 } from "./types.js";
 
 // CUGA demo backend runs on port 7860

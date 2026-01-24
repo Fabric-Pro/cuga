@@ -1,4 +1,5 @@
-import { r as m, g as d } from "./sidepanel-DjwwbR2c.js";
+import { g as d, r as m } from "./sidepanel-DjwwbR2c.js";
+
 function l(i, _) {
 	for (var o = 0; o < _.length; o++) {
 		const e = _[o];
@@ -26,10 +27,10 @@ function g() {
 	return (
 		s ||
 			((s = 1),
-			(function (i, _) {
-				(function (o, e) {
+			((i, _) => {
+				((o, e) => {
 					i.exports = e(m());
-				})(f, function (o) {
+				})(f, (o) => {
 					function e(r) {
 						return r && typeof r == "object" && "default" in r
 							? r
@@ -77,9 +78,7 @@ function g() {
 								y: "un anno",
 								yy: "%d anni",
 							},
-							ordinal: function (r) {
-								return r + "º";
-							},
+							ordinal: (r) => r + "º",
 						};
 					return t.default.locale(n, null, !0), n;
 				});

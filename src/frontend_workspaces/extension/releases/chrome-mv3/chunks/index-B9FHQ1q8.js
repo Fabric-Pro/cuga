@@ -1,26 +1,27 @@
 import {
-	g as U,
-	m as Xe,
-	a as ie,
-	t as Q,
 	c as _,
-	h as se,
+	q as ae,
+	v as B,
 	r as de,
 	u as Ee,
-	q as ae,
-	n as xe,
-	v as B,
-	o as Oe,
-	b as ze,
-	w as re,
-	j as Ie,
 	x as ge,
-	y as Ye,
+	j as Ie,
+	a as ie,
 	z as ne,
+	o as Oe,
+	t as Q,
+	w as re,
 	A as Se,
+	h as se,
+	g as U,
+	m as Xe,
+	n as xe,
+	y as Ye,
+	b as ze,
 } from "./utils-D71RtZIR.js";
+
 function Ne(P) {
-	let { swiper: e, extendParams: S, on: m, emit: b } = P;
+	const { swiper: e, extendParams: S, on: m, emit: b } = P;
 	S({
 		virtual: {
 			enabled: !1,
@@ -118,7 +119,7 @@ function Ne(P) {
 				offset: H,
 				from: h,
 				to: y,
-				slides: (function () {
+				slides: (() => {
 					const D = [];
 					for (let W = h; W <= y; W += 1) D.push(I[W]);
 					return D;
@@ -216,9 +217,9 @@ function Ne(P) {
 				X &&
 					C.setAttribute(
 						"data-swiper-slide-index",
-						parseInt(X, 10) + c,
+						Number.parseInt(X, 10) + c,
 					),
-					(s[parseInt(p, 10) + c] = C);
+					(s[Number.parseInt(p, 10) + c] = C);
 			}),
 				(e.virtual.cache = s);
 		}
@@ -312,7 +313,7 @@ function Ne(P) {
 		});
 }
 function Fe(P) {
-	let { swiper: e, extendParams: S, on: m, emit: b } = P;
+	const { swiper: e, extendParams: S, on: m, emit: b } = P;
 	const g = U(),
 		v = se();
 	(e.keyboard = { enabled: !1 }),
@@ -414,7 +415,7 @@ function Fe(P) {
 		Object.assign(e.keyboard, { enable: d, disable: l });
 }
 function Ge(P) {
-	let { swiper: e, extendParams: S, on: m, emit: b } = P;
+	const { swiper: e, extendParams: S, on: m, emit: b } = P;
 	const g = se();
 	S({
 		mousewheel: {
@@ -685,7 +686,7 @@ function De(P, e, S, m) {
 	);
 }
 function je(P) {
-	let { swiper: e, extendParams: S, on: m, emit: b } = P;
+	const { swiper: e, extendParams: S, on: m, emit: b } = P;
 	S({
 		navigation: {
 			nextEl: null,
@@ -864,12 +865,12 @@ function K(P) {
 	return (
 		P === void 0 && (P = ""),
 		`.${P.trim()
-			.replace(/([\.:!+\/()[\]])/g, "\\$1")
+			.replace(/([.:!+/()[\]])/g, "\\$1")
 			.replace(/ /g, ".")}`
 	);
 }
 function Ve(P) {
-	let { swiper: e, extendParams: S, on: m, emit: b } = P;
+	const { swiper: e, extendParams: S, on: m, emit: b } = P;
 	const g = "swiper-pagination";
 	S({
 		pagination: {
@@ -996,13 +997,11 @@ function Ve(P) {
 							"-prev-prev",
 							"-main",
 						].map((z) => `${s.bulletActiveClass}${z}`),
-					]
-						.map((z) =>
-							typeof z == "string" && z.includes(" ")
-								? z.split(" ")
-								: z,
-						)
-						.flat();
+					].flatMap((z) =>
+						typeof z == "string" && z.includes(" ")
+							? z.split(" ")
+							: z,
+					);
 					M.classList.remove(...x);
 				}),
 				p.length > 1)
@@ -1306,7 +1305,7 @@ function Ve(P) {
 	});
 }
 function _e(P) {
-	let { swiper: e, extendParams: S, on: m, emit: b } = P;
+	const { swiper: e, extendParams: S, on: m, emit: b } = P;
 	const g = U();
 	let v = !1,
 		w = null,
@@ -1376,7 +1375,7 @@ function _e(P) {
 					(e.params.centeredSlides ? e.snapGrid[0] : 0))),
 			e.params.scrollbar.dragSize === "auto"
 				? (n = f * u)
-				: (n = parseInt(e.params.scrollbar.dragSize, 10)),
+				: (n = Number.parseInt(e.params.scrollbar.dragSize, 10)),
 			e.isHorizontal()
 				? (M.style.width = `${n}px`)
 				: (M.style.height = `${n}px`),
@@ -1596,7 +1595,7 @@ function _e(P) {
 	});
 }
 function Ue(P) {
-	let { swiper: e, extendParams: S, on: m } = P;
+	const { swiper: e, extendParams: S, on: m } = P;
 	S({ parallax: { enabled: !1 } });
 	const b =
 			"[data-swiper-parallax], [data-swiper-parallax-x], [data-swiper-parallax-y], [data-swiper-parallax-opacity], [data-swiper-parallax-scale]",
@@ -1616,10 +1615,10 @@ function Ue(P) {
 						? ((o = u), (a = "0"))
 						: ((a = u), (o = "0")),
 				o.indexOf("%") >= 0
-					? (o = `${parseInt(o, 10) * l * f}%`)
+					? (o = `${Number.parseInt(o, 10) * l * f}%`)
 					: (o = `${o * l * f}px`),
 				a.indexOf("%") >= 0
-					? (a = `${parseInt(a, 10) * l}%`)
+					? (a = `${Number.parseInt(a, 10) * l}%`)
 					: (a = `${a * l}px`),
 				typeof r < "u" && r !== null)
 			) {
@@ -1665,14 +1664,14 @@ function Ue(P) {
 							});
 				});
 		},
-		w = function (d) {
+		w = (d) => {
 			d === void 0 && (d = e.params.speed);
 			const { el: l, hostEl: n } = e,
 				f = [...l.querySelectorAll(b)];
 			e.isElement && f.push(...n.querySelectorAll(b)),
 				f.forEach((u) => {
 					let o =
-						parseInt(
+						Number.parseInt(
 							u.getAttribute("data-swiper-parallax-duration"),
 							10,
 						) || d;
@@ -1695,7 +1694,7 @@ function Ue(P) {
 		});
 }
 function Ze(P) {
-	let { swiper: e, extendParams: S, on: m, emit: b } = P;
+	const { swiper: e, extendParams: S, on: m, emit: b } = P;
 	const g = se();
 	S({
 		zoom: {
@@ -2285,11 +2284,11 @@ function Ze(P) {
 		});
 }
 function Ke(P) {
-	let { swiper: e, extendParams: S, on: m } = P;
+	const { swiper: e, extendParams: S, on: m } = P;
 	S({ controller: { control: void 0, inverse: !1, by: "slide" } }),
 		(e.controller = { control: void 0 });
 	function b(l, n) {
-		const f = (function () {
+		const f = (() => {
 			let t, r, c;
 			return (i, s) => {
 				for (r = -1, t = i.length; t - r > 1; )
@@ -2421,7 +2420,7 @@ function Ke(P) {
 		Object.assign(e.controller, { setTranslate: v, setTransition: w });
 }
 function Qe(P) {
-	let { swiper: e, extendParams: S, on: m } = P;
+	const { swiper: e, extendParams: S, on: m } = P;
 	S({
 		a11y: {
 			enabled: !0,
@@ -2625,7 +2624,7 @@ function Qe(P) {
 						(e.params.loop
 							? e.slideToLoop(
 									e.getSlideIndexWhenGrid(
-										parseInt(
+										Number.parseInt(
 											y.getAttribute(
 												"data-swiper-slide-index",
 											),
@@ -2651,7 +2650,7 @@ function Qe(P) {
 			h.slideLabelMessage &&
 				e.slides.forEach((H, R) => {
 					const q = e.params.loop
-							? parseInt(
+							? Number.parseInt(
 									H.getAttribute("data-swiper-slide-index"),
 									10,
 								)
@@ -2735,7 +2734,7 @@ function Qe(P) {
 		});
 }
 function Je(P) {
-	let { swiper: e, extendParams: S, on: m } = P;
+	const { swiper: e, extendParams: S, on: m } = P;
 	S({
 		history: {
 			enabled: !1,
@@ -2858,7 +2857,7 @@ function et(P) {
 						(r) => r.getAttribute("data-hash") === o,
 					);
 					return a
-						? parseInt(
+						? Number.parseInt(
 								a.getAttribute("data-swiper-slide-index"),
 								10,
 							)
@@ -2941,7 +2940,7 @@ function et(P) {
 		});
 }
 function tt(P) {
-	let { swiper: e, extendParams: S, on: m, emit: b, params: g } = P;
+	const { swiper: e, extendParams: S, on: m, emit: b, params: g } = P;
 	(e.autoplay = { running: !1, paused: !1, timeLeft: 0 }),
 		S({
 			autoplay: {
@@ -2994,7 +2993,10 @@ function tt(P) {
 						))
 					: (y = e.slides[e.activeIndex]),
 				y
-					? parseInt(y.getAttribute("data-swiper-autoplay"), 10)
+					? Number.parseInt(
+							y.getAttribute("data-swiper-autoplay"),
+							10,
+						)
 					: void 0
 			);
 		},
@@ -3163,7 +3165,7 @@ function tt(P) {
 		Object.assign(e.autoplay, { start: A, stop: O, pause: E, resume: I });
 }
 function at(P) {
-	let { swiper: e, extendParams: S, on: m } = P;
+	const { swiper: e, extendParams: S, on: m } = P;
 	S({
 		thumbs: {
 			swiper: null,
@@ -3190,7 +3192,7 @@ function at(P) {
 			return;
 		let u;
 		l.params.loop
-			? (u = parseInt(
+			? (u = Number.parseInt(
 					l.clickedSlide.getAttribute("data-swiper-slide-index"),
 					10,
 				))
@@ -3335,7 +3337,7 @@ function at(P) {
 		Object.assign(e.thumbs, { init: w, update: d });
 }
 function st(P) {
-	let { swiper: e, extendParams: S, emit: m, once: b } = P;
+	const { swiper: e, extendParams: S, emit: m, once: b } = P;
 	S({
 		freeMode: {
 			enabled: !1,
@@ -3372,7 +3374,7 @@ function st(P) {
 			});
 	}
 	function w(d) {
-		let { currentPos: l } = d;
+		const { currentPos: l } = d;
 		if (e.params.cssMode) return;
 		const {
 				params: n,
@@ -3517,15 +3519,17 @@ function st(P) {
 	});
 }
 function it(P) {
-	let { swiper: e, extendParams: S, on: m } = P;
+	const { swiper: e, extendParams: S, on: m } = P;
 	S({ grid: { rows: 1, fill: "column" } });
 	let b, g, v, w;
 	const d = () => {
 			let t = e.params.spaceBetween;
 			return (
 				typeof t == "string" && t.indexOf("%") >= 0
-					? (t = (parseFloat(t.replace("%", "")) / 100) * e.size)
-					: typeof t == "string" && (t = parseFloat(t)),
+					? (t =
+							(Number.parseFloat(t.replace("%", "")) / 100) *
+							e.size)
+					: typeof t == "string" && (t = Number.parseFloat(t)),
 				t
 			);
 		},
@@ -3639,9 +3643,8 @@ function it(P) {
 		});
 }
 function He(P) {
-	const e = this,
-		{ params: S, slidesEl: m } = e;
-	S.loop && e.loopDestroy();
+	const { params: S, slidesEl: m } = this;
+	S.loop && this.loopDestroy();
 	const b = (g) => {
 		if (typeof g == "string") {
 			const v = document.createElement("div");
@@ -3651,14 +3654,13 @@ function He(P) {
 	if (typeof P == "object" && "length" in P)
 		for (let g = 0; g < P.length; g += 1) P[g] && b(P[g]);
 	else b(P);
-	e.recalcSlides(),
-		S.loop && e.loopCreate(),
-		(!S.observer || e.isElement) && e.update();
+	this.recalcSlides(),
+		S.loop && this.loopCreate(),
+		(!S.observer || this.isElement) && this.update();
 }
 function ke(P) {
-	const e = this,
-		{ params: S, activeIndex: m, slidesEl: b } = e;
-	S.loop && e.loopDestroy();
+	const { params: S, activeIndex: m, slidesEl: b } = this;
+	S.loop && this.loopDestroy();
 	let g = m + 1;
 	const v = (w) => {
 		if (typeof w == "string") {
@@ -3670,29 +3672,29 @@ function ke(P) {
 		for (let w = 0; w < P.length; w += 1) P[w] && v(P[w]);
 		g = m + P.length;
 	} else v(P);
-	e.recalcSlides(),
-		S.loop && e.loopCreate(),
-		(!S.observer || e.isElement) && e.update(),
-		e.slideTo(g, 0, !1);
+	this.recalcSlides(),
+		S.loop && this.loopCreate(),
+		(!S.observer || this.isElement) && this.update(),
+		this.slideTo(g, 0, !1);
 }
 function Re(P, e) {
-	const S = this,
-		{ params: m, activeIndex: b, slidesEl: g } = S;
+	const { params: m, activeIndex: b, slidesEl: g } = this;
 	let v = b;
-	m.loop && ((v -= S.loopedSlides), S.loopDestroy(), S.recalcSlides());
-	const w = S.slides.length;
+	m.loop &&
+		((v -= this.loopedSlides), this.loopDestroy(), this.recalcSlides());
+	const w = this.slides.length;
 	if (P <= 0) {
-		S.prependSlide(e);
+		this.prependSlide(e);
 		return;
 	}
 	if (P >= w) {
-		S.appendSlide(e);
+		this.appendSlide(e);
 		return;
 	}
 	let d = v > P ? v + 1 : v;
 	const l = [];
 	for (let n = w - 1; n >= P; n -= 1) {
-		const f = S.slides[n];
+		const f = this.slides[n];
 		f.remove(), l.unshift(f);
 	}
 	if (typeof e == "object" && "length" in e) {
@@ -3700,40 +3702,44 @@ function Re(P, e) {
 		d = v > P ? v + e.length : v;
 	} else g.append(e);
 	for (let n = 0; n < l.length; n += 1) g.append(l[n]);
-	S.recalcSlides(),
-		m.loop && S.loopCreate(),
-		(!m.observer || S.isElement) && S.update(),
-		m.loop ? S.slideTo(d + S.loopedSlides, 0, !1) : S.slideTo(d, 0, !1);
+	this.recalcSlides(),
+		m.loop && this.loopCreate(),
+		(!m.observer || this.isElement) && this.update(),
+		m.loop
+			? this.slideTo(d + this.loopedSlides, 0, !1)
+			: this.slideTo(d, 0, !1);
 }
 function Be(P) {
-	const e = this,
-		{ params: S, activeIndex: m } = e;
+	const { params: S, activeIndex: m } = this;
 	let b = m;
-	S.loop && ((b -= e.loopedSlides), e.loopDestroy());
+	S.loop && ((b -= this.loopedSlides), this.loopDestroy());
 	let g = b,
 		v;
 	if (typeof P == "object" && "length" in P) {
 		for (let w = 0; w < P.length; w += 1)
-			(v = P[w]), e.slides[v] && e.slides[v].remove(), v < g && (g -= 1);
+			(v = P[w]),
+				this.slides[v] && this.slides[v].remove(),
+				v < g && (g -= 1);
 		g = Math.max(g, 0);
 	} else
 		(v = P),
-			e.slides[v] && e.slides[v].remove(),
+			this.slides[v] && this.slides[v].remove(),
 			v < g && (g -= 1),
 			(g = Math.max(g, 0));
-	e.recalcSlides(),
-		S.loop && e.loopCreate(),
-		(!S.observer || e.isElement) && e.update(),
-		S.loop ? e.slideTo(g + e.loopedSlides, 0, !1) : e.slideTo(g, 0, !1);
+	this.recalcSlides(),
+		S.loop && this.loopCreate(),
+		(!S.observer || this.isElement) && this.update(),
+		S.loop
+			? this.slideTo(g + this.loopedSlides, 0, !1)
+			: this.slideTo(g, 0, !1);
 }
 function We() {
-	const P = this,
-		e = [];
-	for (let S = 0; S < P.slides.length; S += 1) e.push(S);
-	P.removeSlide(e);
+	const e = [];
+	for (let S = 0; S < this.slides.length; S += 1) e.push(S);
+	this.removeSlide(e);
 }
 function rt(P) {
-	let { swiper: e } = P;
+	const { swiper: e } = P;
 	Object.assign(e, {
 		appendSlide: He.bind(e),
 		prependSlide: ke.bind(e),
@@ -3799,7 +3805,7 @@ function ve(P, e) {
 	);
 }
 function Me(P) {
-	let { swiper: e, duration: S, transformElements: m, allSlides: b } = P;
+	const { swiper: e, duration: S, transformElements: m, allSlides: b } = P;
 	const { activeIndex: g } = e,
 		v = (w) =>
 			w.parentElement
@@ -3832,7 +3838,7 @@ function Me(P) {
 	}
 }
 function nt(P) {
-	let { swiper: e, extendParams: S, on: m } = P;
+	const { swiper: e, extendParams: S, on: m } = P;
 	S({ fadeEffect: { crossFade: !1 } }),
 		fe({
 			effect: "fade",
@@ -3877,7 +3883,7 @@ function nt(P) {
 		});
 }
 function lt(P) {
-	let { swiper: e, extendParams: S, on: m } = P;
+	const { swiper: e, extendParams: S, on: m } = P;
 	S({
 		cubeEffect: {
 			slideShadows: !0,
@@ -3948,7 +3954,7 @@ function lt(P) {
 				const O = n[A];
 				let E = A;
 				s &&
-					(E = parseInt(
+					(E = Number.parseInt(
 						O.getAttribute("data-swiper-slide-index"),
 						10,
 					));
@@ -4047,7 +4053,7 @@ function pe(P, e, S) {
 	return g || ((g = _("div", m.split(" "))), b.append(g)), g;
 }
 function ot(P) {
-	let { swiper: e, extendParams: S, on: m } = P;
+	const { swiper: e, extendParams: S, on: m } = P;
 	S({ flipEffect: { slideShadows: !0, limitRotation: !0 } });
 	const b = (d, l) => {
 		let n = e.isHorizontal()
@@ -4124,7 +4130,7 @@ function ot(P) {
 	});
 }
 function ct(P) {
-	let { swiper: e, extendParams: S, on: m } = P;
+	const { swiper: e, extendParams: S, on: m } = P;
 	S({
 		coverflowEffect: {
 			rotate: 50,
@@ -4168,7 +4174,7 @@ function ct(P) {
 						Y = n.stretch;
 					typeof Y == "string" &&
 						Y.indexOf("%") !== -1 &&
-						(Y = (parseFloat(n.stretch) / 100) * p);
+						(Y = (Number.parseFloat(n.stretch) / 100) * p);
 					let L = f ? 0 : Y * A,
 						M = f ? Y * A : 0,
 						x = 1 - (1 - n.scale) * Math.abs(A);
@@ -4224,7 +4230,7 @@ function ct(P) {
 		});
 }
 function dt(P) {
-	let { swiper: e, extendParams: S, on: m } = P;
+	const { swiper: e, extendParams: S, on: m } = P;
 	S({
 		creativeEffect: {
 			limitProgress: 1,
@@ -4292,7 +4298,7 @@ function dt(P) {
 							`calc(${x}px + (${b(A.translate[z])} * ${Math.abs(c * f)}))`;
 					}),
 					C.forEach((x, z) => {
-						let k = A.rotate[z] * Math.abs(c * f);
+						const k = A.rotate[z] * Math.abs(c * f);
 						C[z] = k;
 					}),
 					(t.style.zIndex = -Math.abs(Math.round(r)) + w.length);
@@ -4345,7 +4351,7 @@ function dt(P) {
 	});
 }
 function pt(P) {
-	let { swiper: e, extendParams: S, on: m } = P;
+	const { swiper: e, extendParams: S, on: m } = P;
 	S({
 		cardsEffect: {
 			slideShadows: !0,

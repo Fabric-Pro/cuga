@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
 import { HelpCircle, X } from "lucide-react";
-import { GuidedTour, TourStep } from "./GuidedTour";
+import React, { useEffect, useState } from "react";
+import { GuidedTour, type TourStep } from "./GuidedTour";
 import "./AdvancedTourButton.css";
 
 interface AdvancedTourButtonProps {

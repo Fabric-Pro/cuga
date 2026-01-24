@@ -1,4 +1,5 @@
 import { r as f, g as l } from "./sidepanel-DjwwbR2c.js";
+
 function p(n, s) {
 	for (var _ = 0; _ < s.length; _++) {
 		const e = s[_];
@@ -26,10 +27,10 @@ function m() {
 	return (
 		i ||
 			((i = 1),
-			(function (n, s) {
-				(function (_, e) {
+			((n, s) => {
+				((_, e) => {
 					n.exports = e(f());
-				})(c, function (_) {
+				})(c, (_) => {
 					function e(r) {
 						return r && typeof r == "object" && "default" in r
 							? r
@@ -55,12 +56,8 @@ function m() {
 									"_",
 								),
 							weekdaysMin: "ح_ن_ث_ر_خ_ج_س".split("_"),
-							ordinal: function (r) {
-								return r;
-							},
-							meridiem: function (r) {
-								return r > 12 ? "م" : "ص";
-							},
+							ordinal: (r) => r,
+							meridiem: (r) => (r > 12 ? "م" : "ص"),
 							formats: {
 								LT: "HH:mm",
 								LTS: "HH:mm:ss",

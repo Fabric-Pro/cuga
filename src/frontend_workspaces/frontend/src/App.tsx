@@ -1,6 +1,6 @@
+import { App } from "agentic_chat";
 import React from "react";
 import { createRoot } from "react-dom/client";
-import { App } from "agentic_chat";
 
 function renderApp(): void {
 	const rootElement = document.getElementById("root");

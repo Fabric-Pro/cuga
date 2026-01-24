@@ -75,7 +75,7 @@ const VariablesSidebar: React.FC<VariablesSidebarProps> = ({
 								stroke="currentColor"
 								strokeWidth="2"
 							>
-								<polyline points="15 18 9 12 15 6"></polyline>
+								<polyline points="15 18 9 12 15 6" />
 							</svg>
 						) : (
 							<svg
@@ -86,7 +86,7 @@ const VariablesSidebar: React.FC<VariablesSidebarProps> = ({
 								stroke="currentColor"
 								strokeWidth="2"
 							>
-								<polyline points="9 18 15 12 9 6"></polyline>
+								<polyline points="9 18 15 12 9 6" />
 							</svg>
 						)}
 					</button>
@@ -101,7 +101,7 @@ const VariablesSidebar: React.FC<VariablesSidebarProps> = ({
 									stroke="currentColor"
 									strokeWidth="2"
 								>
-									<path d="M4 7h16M4 12h16M4 17h16"></path>
+									<path d="M4 7h16M4 12h16M4 17h16" />
 								</svg>
 								<span>Variables</span>
 								<span className="variables-count">
@@ -233,7 +233,7 @@ const VariablesSidebar: React.FC<VariablesSidebarProps> = ({
 						stroke="currentColor"
 						strokeWidth="2"
 					>
-						<polyline points="9 18 15 12 9 6"></polyline>
+						<polyline points="9 18 15 12 9 6" />
 					</svg>
 					<span className="variables-floating-count">
 						{variableKeys.length}

@@ -1,10 +1,10 @@
-import HtmlWebpackPlugin from "html-webpack-plugin";
 import CopyWebpackPlugin from "copy-webpack-plugin";
-import TerserPlugin from "terser-webpack-plugin";
-import webpack from "webpack";
-import path from "path";
-import { fileURLToPath } from "url";
+import HtmlWebpackPlugin from "html-webpack-plugin";
 import { createRequire } from "module";
+import path from "path";
+import TerserPlugin from "terser-webpack-plugin";
+import { fileURLToPath } from "url";
+import webpack from "webpack";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

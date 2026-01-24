@@ -1,5 +1,6 @@
-import { a as T, g as N } from "./sidepanel-DjwwbR2c.js";
-import { r as x, a as A } from "./index-7KKzZJbI.js";
+import { a as A, r as x } from "./index-7KKzZJbI.js";
+import { g as N, a as T } from "./sidepanel-DjwwbR2c.js";
+
 function q(l, s) {
 	for (var p = 0; p < s.length; p++) {
 		const i = s[p];
@@ -44,7 +45,7 @@ function U() {
 		},
 		y = (t, e, r, c) => {
 			if ((e && typeof e == "object") || typeof e == "function")
-				for (let a of i(e))
+				for (const a of i(e))
 					!d.call(t, a) &&
 						a !== r &&
 						s(t, a, {
